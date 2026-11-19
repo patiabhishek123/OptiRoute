@@ -9,6 +9,9 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
+
+	"github.com/google/uuid"
 )
 
 // Error is a client-facing error. Handlers return it; WriteError renders it.
@@ -73,4 +76,33 @@ func DecodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 		return BadRequest("INVALID_JSON", "request body must be a single JSON object", nil)
 	}
 	return nil
+}
+
+// Page reads ?limit= (default 100, max 500) and ?offset= (default 0) for list endpoints.
+func Page(r *http.Request) (limit, offset int32, err error) {
+	limit, offset = 100, 0
+	parse := func(key string, dst *int32, lo, hi int64) {
+		v := r.URL.Query().Get(key)
+		if v == "" || err != nil {
+			return
+		}
+		n, perr := strconv.ParseInt(v, 10, 32)
+		if perr != nil || n < lo || n > hi {
+			err = BadRequest("INVALID_PAGINATION", fmt.Sprintf("%s must be an integer in [%d, %d]", key, lo, hi), nil)
+			return
+		}
+		*dst = int32(n)
+	}
+	parse("limit", &limit, 1, 500)
+	parse("offset", &offset, 0, 1<<30)
+	return limit, offset, err
+}
+
+// PathUUID parses a {name} path parameter as a UUID (404 when malformed, like a missing row).
+func PathUUID(r *http.Request, name, what string) (uuid.UUID, error) {
+	id, err := uuid.Parse(r.PathValue(name))
+	if err != nil {
+		return uuid.Nil, NotFound(what)
+	}
+	return id, nil
 }

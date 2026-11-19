@@ -16,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -72,4 +73,16 @@ func New(t testing.TB) (*pgxpool.Pool, string) {
 	}
 	t.Cleanup(pool.Close)
 	return pool, dbURL
+}
+
+// CreateOrg inserts an organization and returns its id (for module tests).
+func CreateOrg(t testing.TB, pool *pgxpool.Pool, slug string) uuid.UUID {
+	t.Helper()
+	var id uuid.UUID
+	err := pool.QueryRow(context.Background(),
+		`INSERT INTO core.organizations (name, slug) VALUES ($1, $1) RETURNING id`, slug).Scan(&id)
+	if err != nil {
+		t.Fatalf("create org %q: %v", slug, err)
+	}
+	return id
 }

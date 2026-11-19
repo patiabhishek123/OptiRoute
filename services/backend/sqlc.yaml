@@ -28,3 +28,10 @@ sql:
             go_type:
               type: time.Time
               pointer: true
+  - engine: postgresql
+    schema: migrations
+    queries: internal/geography/queries.sql
+    gen:
+      go:
+        <<: *go
+        out: internal/geography/store

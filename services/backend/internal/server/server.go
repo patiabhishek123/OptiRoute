@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 
+	"github.com/patiabhishek123/OptiRoute/services/backend/internal/geography"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/identity"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/auth"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/httpx"
@@ -36,6 +37,7 @@ func New(d Deps) (http.Handler, error) {
 	authn := func(h http.Handler) http.Handler { return auth.Authenticate(tokens, h) }
 	identity.NewHandler(identity.NewService(d.DB, tokens, d.RefreshTokenTTL), d.Log, d.AllowSignup).
 		Routes(mux, authn)
+	geography.NewHandler(geography.NewService(d.DB), d.Log).Routes(mux, authn)
 
 	// Liveness: the process is serving. Readiness: its dependencies answer.
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
