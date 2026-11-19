@@ -4,7 +4,19 @@ Cost-aware vehicle-routing and dispatch platform for regional logistics operator
 It solves a heterogeneous capacitated VRP with time windows (HCVRPTW) using heuristics + Google OR-Tools + custom local search,
 and supports dispatcher approval and dynamic re-optimization (new orders, breakdowns).
 
-**Status:** pre-implementation. Start with Phase 1 in [docs/PLAN.md](docs/PLAN.md).
+**Status:** Phase 0 (scaffold) done. Next: Phase 1 in [docs/PLAN.md](docs/PLAN.md).
+
+## Quick start
+
+Requires [uv](https://docs.astral.sh/uv/), Docker and make.
+
+```bash
+cp .env.example .env   # optional; defaults work without it
+make setup             # Python 3.12 venv + optimizer deps
+make lint test         # ruff + pytest
+make up                # Postgres+PostGIS on :15432, Redis on :16379
+make down
+```
 
 ## Documents
 
@@ -12,9 +24,7 @@ and supports dispatcher approval and dynamic re-optimization (new orders, breakd
 |---|---|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Components, data flow, optimizer contract, and decisions that resolve gaps in the spec |
 | [docs/PLAN.md](docs/PLAN.md) | Phased build plan with tasks and exit criteria (milestones M1–M6) |
-| `OptiRoute_Technical_Architecture_Implementation_Plan.docx` | Full original specification (source of truth for scope) |
-| `OR-Tools Dispatch Optimization Platform-*.pdf` | Component diagram |
-| `Route Planning Data Model-*.pdf` | ER diagram |
+| [docs/spec/](docs/spec/) | Original specification (`.docx`, source of truth for scope), component diagram and ER diagram |
 
 ## Stack
 

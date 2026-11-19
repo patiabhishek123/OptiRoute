@@ -9,13 +9,13 @@ Design references: [ARCHITECTURE.md](ARCHITECTURE.md). Full spec: `OptiRoute_Tec
 
 ## Phase 0: Repository setup (2–3 days)
 
-- [ ] `git init`, monorepo layout from the README, `.gitignore`, `.editorconfig`
-- [ ] `services/optimizer`: Python 3.12 with `uv`, `ruff`, `pytest`, `ortools`, `pydantic`
-- [ ] `docker-compose.yml` with Postgres+PostGIS and Redis (OSRM is added in Phase 2)
-- [ ] GitHub Actions: lint and test for Python (Go and TS jobs added in their phases)
-- [ ] Move the spec, diagrams and notebooks into `docs/spec/` and `experiments/notebooks/`
+- [x] `git init`, monorepo layout from the README, `.gitignore`, `.editorconfig`
+- [x] `services/optimizer`: Python 3.12 with `uv`, `ruff`, `pytest`, `ortools`, `pydantic`
+- [x] `docker-compose.yml` with Postgres+PostGIS and Redis (OSRM is added in Phase 2), host ports 15432/16379
+- [x] GitHub Actions: lint and test for Python (Go and TS jobs added in their phases)
+- [x] Move the spec, diagrams and notebooks into `docs/spec/` and `experiments/notebooks/`
 
-**Exit:** `make test` passes in CI on an empty test suite.
+**Exit:** `make lint test` passes in CI (smoke tests: package import, CLI, OR-Tools solves a 4-node TSP).
 
 ## Phase 1: Optimization engine (weeks 1–2) → M1
 
