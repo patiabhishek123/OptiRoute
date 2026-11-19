@@ -91,3 +91,66 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+
+  e2e:
+    # Browser tests against the real stack. No OSRM in CI (the regional dataset is too heavy to build
+    # here): the worker uses haversine matrices and the map draws straight lines. These are the
+    # designed degraded modes, and the tests assert what is rendered, not that roads were used.
+    runs-on: ubuntu-latest
+    needs: [backend, dashboard]
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_DB: optiroute
+          POSTGRES_USER: optiroute
+          POSTGRES_PASSWORD: optiroute
+        ports: ["15432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U optiroute" --health-interval 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["16379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://optiroute:optiroute@localhost:15432/optiroute?sslmode=disable
+      REDIS_URL: redis://localhost:16379/0
+      JWT_SECRET: ci-only-jwt-secret-ci-only-jwt-secret-0123
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: services/backend/go.mod
+          cache-dependency-path: services/backend/go.sum
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/dashboard/package-lock.json
+      - name: Start API
+        working-directory: services/backend
+        run: |
+          go build -o /tmp/api ./cmd/api
+          MIGRATE_ON_START=true nohup /tmp/api serve > /tmp/api.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf localhost:8080/readyz && break; sleep 1; done
+      - name: Start optimizer worker
+        working-directory: services/optimizer
+        run: |
+          uv sync --locked
+          nohup uv run optiroute worker > /tmp/worker.log 2>&1 &
+      - name: Browser tests
+        working-directory: apps/dashboard
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npx playwright test
+      - name: Logs and traces on failure
+        if: failure()
+        run: tail -n 100 /tmp/api.log /tmp/worker.log
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-results
+          path: apps/dashboard/test-results

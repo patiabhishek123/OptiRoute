@@ -21,9 +21,11 @@ make osrm-build        # one-off: Odisha road network (~1 min, memory-capped)
 make osrm-up           # OSRM on :15000
 make worker            # optimizer worker (Postgres + Redis + OSRM)
 make api               # Go API on :8080 (migrates on start; runs the outbox relay and plan consumer)
+make dashboard         # dispatcher dashboard on http://localhost:5173 (sign up there)
 
 # in another shell, with api + worker running: the whole flow through the public API
 make e2e               # signup -> fleet -> CSV of 100 orders -> job -> plan -> approve -> activate
+make dashboard-e2e     # the same through the browser (Playwright, 3 specs)
 
 make down              # stop everything, including OSRM
 ```
@@ -44,7 +46,7 @@ make down              # stop everything, including OSRM
 | Backend | Go modular monolith, `net/http`, pgx + sqlc, goose migrations |
 | Data | PostgreSQL 16 + PostGIS, Redis (Streams) |
 | Routing | OSRM on an OpenStreetMap regional extract |
-| Frontend | React + TypeScript (Vite), MapLibre GL, TanStack Query |
+| Frontend | React 19 + TypeScript (Vite), MapLibre GL, TanStack Query, Tailwind; Playwright browser tests |
 | Ops | Docker Compose (dev), GitHub Actions, Prometheus + Grafana; AWS ECS/Fargate later |
 
 ## Target repository layout

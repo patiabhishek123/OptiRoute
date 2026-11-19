@@ -70,14 +70,34 @@ Two bugs were found and fixed on the way: idle-at-first-stop schedules, and a po
 
 **Exit (M3):** create org → depots → vehicles → import 100 orders via CSV → `POST /optimization/jobs` → plan available via the API. Duplicate requests with the same idempotency key create one job.
 
-## Phase 4: Dashboard + dispatch (weeks 7–8) → M4 (MVP)
+## Phase 4: Dashboard + dispatch (weeks 7–8) → M4 (MVP) ✅
 
-- [ ] Vite + React + TS app; auth; org-scoped API client (TanStack Query)
-- [ ] Order list + CSV upload with error report; fleet and driver pages
-- [ ] Run optimization (choose algorithm and time limit), live job status over SSE
-- [ ] MapLibre map: depots, orders, routes coloured by vehicle (OSRM `/route` geometry)
-- [ ] Plan comparison: baseline (S0) vs optimized, showing cost breakdown, distance, vehicles, late and unassigned orders
-- [ ] Approve → activate; CSV/PDF route export per driver
+- [x] Vite + React 19 + TS app in `apps/dashboard`; signup/login with refresh-token rotation; org-scoped API client (TanStack Query); Tailwind
+- [x] Orders (org-timezone windows, cancel) + CSV upload with the per-line error report; fleet, drivers and daily pairing pages
+- [x] Run optimization (algorithm, time limit, hard/soft windows; one `Idempotency-Key` per click); live job status by **polling** (1 s, only while a job runs). SSE is deferred: at a handful of jobs per day polling costs nothing
+- [x] MapLibre map: depots, numbered stops, routes coloured by vehicle along OSRM road geometry (`GET /route-plans/{id}/geometry`, cached; straight-line fallback flagged in the UI)
+- [x] Plan comparison (any two plans; baseline vs optimized): cost breakdown, distance, vehicles, route time, late and unassigned, with better/worse spelled out
+- [x] Approve → activate (with replace-active confirmation and stale-plan report); CSV export; printable per-driver route sheet (browser print → PDF)
+- [x] Playwright (3 specs) runs locally against OSRM and in CI against the real stack without OSRM
+
+**M4 met (2026-11-20).** Each spec §22 item is covered through the dashboard by the browser tests (`make dashboard-e2e`; CI job `e2e`):
+
+| §22 step | Where it's verified |
+|---|---|
+| 22 Create an organization | `fleet-orders`: signup page |
+| 23–26 Depots, vehicles, capacity, drivers and shifts | `fleet-orders`: Fleet tabs; daily pairing |
+| 27–28 Import orders with time windows | `fleet-orders`: CSV rejected with line/column errors, then imported; `dispatch`: 80 orders |
+| 29 Road-distance matrices | OSRM (Odisha) locally; haversine in CI |
+| 30–32 Baseline, OR-Tools, compare | `dispatch`: 6 vans, 80 orders. OR-Tools 19.7% cheaper and 124 km (33%) shorter than nearest neighbour, same 5 vans, 0 late, 0 unassigned |
+| 33 Vehicle-wise routes on a map | `planning`: the map reports every route and all 30 stops as actually rendered |
+| 34 Review and approve | `dispatch`: approve → activate; replacing an active plan needs confirmation |
+| 35 Export and dispatch | `dispatch`: CSV (one line per stop), per-driver route sheet; orders become PLANNED |
+| 36 Save optimization results | plans persisted, versioned, comparable |
+
+Bugs found by looking at screenshots, not by assertions:
+- A blank map, because Vite dropped MapLibre's web worker. The test had only checked that a canvas existed; it now asserts what was rendered.
+- An ETA three hours before its window, because the planned arrival was the van's arrival rather than the service start.
+- A misleading "driving time" label (it included waiting).
 
 **Exit (M4):** the full spec §22 MVP checklist works end to end with 5–10 vehicles and 50–100 orders. Playwright covers the happy path.
 
