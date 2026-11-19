@@ -1,6 +1,8 @@
 OPTIMIZER := services/optimizer
+BACKEND := services/backend
+DEV_ENV := set -a && . $(CURDIR)/.env.example && set +a
 
-.PHONY: help setup lint format test schemas fetch-solomon bench osrm-build osrm-up db-migrate worker up down logs
+.PHONY: help setup lint format test schemas fetch-solomon bench osrm-build osrm-up db-migrate worker api up down logs
 
 help:  ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -8,14 +10,19 @@ help:  ## List targets
 setup:  ## Install optimizer dependencies
 	cd $(OPTIMIZER) && uv sync
 
-lint:  ## Lint and format-check
+lint:  ## Lint and format-check (Python + Go)
 	cd $(OPTIMIZER) && uv run ruff check . && uv run ruff format --check .
+	cd $(BACKEND) && test -z "$$(gofmt -l .)" && go vet ./...
 
 format:  ## Auto-format
 	cd $(OPTIMIZER) && uv run ruff check --fix . && uv run ruff format .
 
-test:  ## Run all tests
+test:  ## Run all tests (Python + Go; integration tests need `make up`)
 	cd $(OPTIMIZER) && uv run pytest
+	cd $(BACKEND) && go test -race ./...
+
+api:  ## Run the Go API on :8080 (migrates on start)
+	cd $(BACKEND) && $(DEV_ENV) && MIGRATE_ON_START=true go run ./cmd/api serve
 
 schemas:  ## Regenerate optimizer contract JSON Schemas
 	cd $(OPTIMIZER) && uv run optiroute schema
@@ -35,10 +42,8 @@ osrm-build:  ## Download + clip Odisha and preprocess OSRM (memory/CPU capped)
 osrm-up:  ## Start the OSRM router (needs osrm-build)
 	docker compose --profile routing up -d --wait osrm
 
-db-migrate:  ## Apply backend migrations (goose Up sections) to the dev database
-	for f in services/backend/migrations/*.sql; do \
-		sed -n '/+goose Up/,/+goose Down/p' $$f | docker compose exec -T db \
-			psql -q -v ON_ERROR_STOP=1 -U optiroute -d optiroute || exit 1; done
+db-migrate:  ## Apply database migrations (goose, embedded in the Go API)
+	cd $(BACKEND) && $(DEV_ENV) && go run ./cmd/api migrate
 
 worker:  ## Run the optimizer worker against local Postgres/Redis (and OSRM if up)
 	cd $(OPTIMIZER) && set -a && . ../../.env.example && set +a && \
