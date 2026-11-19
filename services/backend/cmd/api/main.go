@@ -19,6 +19,7 @@ import (
 
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/config"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/database"
+	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/outbox"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/server"
 )
 
@@ -87,6 +88,12 @@ func serve(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 		WriteTimeout:      60 * time.Second,
 		IdleTimeout:       120 * time.Second,
 	}
+	// Relay outbox events (e.g. new optimization jobs) to Redis for as long as the server runs.
+	relay := &outbox.Relay{Pool: pool, Redis: rdb, Log: log}
+	relayCtx, stopRelay := context.WithCancel(ctx)
+	defer stopRelay()
+	go relay.Run(relayCtx)
+
 	errc := make(chan error, 1)
 	go func() {
 		log.Info("api listening", "addr", cfg.HTTPAddr)

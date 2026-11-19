@@ -56,3 +56,10 @@ sql:
       go:
         <<: *go
         out: internal/orders/store
+  - engine: postgresql
+    schema: migrations
+    queries: internal/planning/queries.sql
+    gen:
+      go:
+        <<: *go
+        out: internal/planning/store
