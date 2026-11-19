@@ -72,11 +72,12 @@ func setup(t *testing.T) *fixture {
 			"routes": []any{
 				map[string]any{"vehicle_id": f.vehicles[0], "driver_id": f.drivers[0], "distance_m": 30_000, "duration_s": 5401,
 					"stops": []any{
-						map[string]any{"order_id": f.orders[0], "seq": 1, "arrival_s": 33000, "departure_s": 33300},
-						map[string]any{"order_id": f.orders[1], "seq": 2, "arrival_s": 34800, "departure_s": 35100},
+						map[string]any{"order_id": f.orders[0], "seq": 1, "arrival_s": 33000, "service_start_s": 33000, "departure_s": 33300},
+						map[string]any{"order_id": f.orders[1], "seq": 2, "arrival_s": 34800, "service_start_s": 34800, "departure_s": 35100},
 					}},
 				map[string]any{"vehicle_id": f.vehicles[1], "driver_id": f.drivers[1], "distance_m": 12_500, "duration_s": 3600,
-					"stops": []any{map[string]any{"order_id": f.orders[2], "seq": 1, "arrival_s": 36000, "departure_s": 36300}}},
+					// Arrives 10:00 but the window opens 11:00: service (and the planned arrival) is 11:00.
+					"stops": []any{map[string]any{"order_id": f.orders[2], "seq": 1, "arrival_s": 36000, "service_start_s": 39600, "departure_s": 39900}}},
 			},
 			"unassigned": []any{},
 			"meta":       map[string]any{"algorithm": "ORTOOLS_GLS"},
@@ -241,6 +242,11 @@ func TestPlanReadAPI(t *testing.T) {
 	ist := time.FixedZone("IST", 5*3600+1800)
 	if want := time.Date(2026, 11, 2, 9, 10, 0, 0, ist); !r1.Stops[0].PlannedArrival.Equal(want) || r1.Stops[1].ExternalOrderID != "O-2" {
 		t.Errorf("stop 1 arrival %v, want %v; stops %+v", r1.Stops[0].PlannedArrival, want, r1.Stops)
+	}
+
+	r2 := plan.Routes[1]
+	if want := time.Date(2026, 11, 2, 11, 0, 0, 0, ist); !r2.Stops[0].PlannedArrival.Equal(want) {
+		t.Errorf("waiting stop planned arrival %v, want the service start %v", r2.Stops[0].PlannedArrival, want)
 	}
 
 	var stops struct{ Items []dispatch.Stop }
