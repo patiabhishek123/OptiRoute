@@ -4,9 +4,11 @@ import { Link, useParams } from "react-router";
 import { api } from "../api/client";
 import type { Depot, Page, Plan, RouteLine } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
+import { PlanActions } from "../components/PlanActions";
 import { RouteMap, type MapRoute } from "../components/RouteMap";
-import { Badge, Card, ErrorBox } from "../components/ui";
+import { Badge, Button, Card, ErrorBox } from "../components/ui";
 import { clock, km, money, timeWindow } from "../lib/format";
+import { download, planCsv } from "../lib/planMetrics";
 import { routeStyles } from "../lib/routeStyle";
 import { algorithmLabel, planTone } from "./Plans";
 
@@ -52,6 +54,12 @@ export function PlanDetail() {
             Plan v{p.version} · {p.planning_date} <Badge tone={planTone[p.status]}>{p.status.toLowerCase()}</Badge>
           </h1>
           <p className="text-sm text-slate-500">{algorithmLabel(p.algorithm)}</p>
+          <div className="mt-2 flex flex-wrap items-start gap-2">
+            <PlanActions plan={p} />
+            <Button variant="secondary" onClick={() => download(`plan-${p.planning_date}-v${p.version}.csv`, planCsv(p, (iso) => clock(iso, tz)))}>
+              Export CSV
+            </Button>
+          </div>
         </div>
         <dl className="flex gap-6 text-sm">
           <Kpi label="Routes" value={String(p.routes.length)} />
@@ -68,7 +76,12 @@ export function PlanDetail() {
           selected={selected} onSelect={setSelected} />
         <div className="min-h-0 overflow-y-auto">
           <Card title={current ? `${current.registration_number} · stops` : "Routes"}
-            actions={current && <button className="text-sm text-indigo-700 hover:underline" onClick={() => setSelected(null)}>All routes</button>}>
+            actions={current && (
+              <>
+                <Link to={`/plans/${p.id}/routes/${current.id}/sheet`} className="text-sm text-indigo-700 hover:underline">Route sheet</Link>
+                <button className="text-sm text-indigo-700 hover:underline" onClick={() => setSelected(null)}>All routes</button>
+              </>
+            )}>
             {!current ? (
               <ul className="divide-y divide-slate-100" aria-label="Routes">
                 {p.routes.map((r) => {
