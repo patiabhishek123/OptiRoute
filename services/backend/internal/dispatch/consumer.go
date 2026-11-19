@@ -3,14 +3,18 @@ package dispatch
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
+
+	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/database"
 )
 
 // Streams written by the optimizer worker (docs/ARCHITECTURE.md §2).
@@ -32,6 +36,11 @@ type Consumer struct {
 	Name    string        // consumer name, default hostname-pid
 	Block   time.Duration // XREADGROUP block, default 5s
 	LeaseMs time.Duration // reclaim pending messages idle for longer, default 60s
+	// MaxDeliveries dead-letters an event that has failed this many deliveries, so one bad event
+	// can never block the stream (default 5).
+	MaxDeliveries int64
+	// MaterializeFunc defaults to Materialize; tests replace it to simulate failures.
+	MaterializeFunc func(ctx context.Context, pool *pgxpool.Pool, jobID uuid.UUID) (uuid.UUID, bool, error)
 }
 
 func (c *Consumer) defaults() {
@@ -50,6 +59,12 @@ func (c *Consumer) defaults() {
 	}
 	if c.LeaseMs == 0 {
 		c.LeaseMs = time.Minute
+	}
+	if c.MaxDeliveries == 0 {
+		c.MaxDeliveries = 5
+	}
+	if c.MaterializeFunc == nil {
+		c.MaterializeFunc = Materialize
 	}
 }
 
@@ -93,6 +108,24 @@ func (c *Consumer) RunOnce(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	// Reclaimed messages have failed before: give up on ones that keep failing.
+	fresh := msgs[:0]
+	for _, m := range msgs {
+		pending, err := c.Redis.XPendingExt(ctx, &redis.XPendingExtArgs{
+			Stream: c.Stream, Group: ConsumerGrp, Start: m.ID, End: m.ID, Count: 1,
+		}).Result()
+		if err != nil {
+			return 0, err
+		}
+		if len(pending) == 1 && pending[0].RetryCount > c.MaxDeliveries {
+			if err := c.deadLetter(ctx, m, "still failing after "+strconv.FormatInt(c.MaxDeliveries, 10)+" deliveries"); err != nil {
+				return 0, err
+			}
+			continue
+		}
+		fresh = append(fresh, m)
+	}
+	msgs = fresh
 	if len(msgs) == 0 {
 		streams, err := c.Redis.XReadGroup(ctx, &redis.XReadGroupArgs{
 			Group: ConsumerGrp, Consumer: c.Name, Streams: []string{c.Stream, ">"}, Count: 10, Block: c.Block,
@@ -104,12 +137,15 @@ func (c *Consumer) RunOnce(ctx context.Context) (int, error) {
 		}
 		msgs = streams[0].Messages
 	}
+	// Try every message: one failing event must not stop the healthy ones behind it. Failures stay
+	// pending and are reclaimed later (and dead-lettered after MaxDeliveries).
+	var errs []error
 	for _, m := range msgs {
 		if err := c.handle(ctx, m); err != nil {
-			return 0, err // leave it pending; it is retried or reclaimed later
+			errs = append(errs, fmt.Errorf("event %s: %w", m.ID, err))
 		}
 	}
-	return len(msgs), nil
+	return len(msgs), errors.Join(errs...)
 }
 
 func (c *Consumer) handle(ctx context.Context, m redis.XMessage) error {
@@ -122,8 +158,10 @@ func (c *Consumer) handle(ctx context.Context, m redis.XMessage) error {
 	case status != "COMPLETED":
 		// FAILED/INFEASIBLE/TIME_LIMIT/CANCELLED: no plan to build; the job row tells the story.
 	default:
-		planID, created, err := Materialize(ctx, c.Pool, jobID)
-		if errors.Is(err, ErrMalformedResult) {
+		planID, created, err := c.MaterializeFunc(ctx, c.Pool, jobID)
+		if errors.Is(err, ErrMalformedResult) || database.IsPermanentDataError(err) {
+			// Retrying cannot fix a malformed result or a constraint violation (e.g. a job whose
+			// organization or vehicles no longer exist): dead-letter it instead of blocking the stream.
 			return c.deadLetter(ctx, m, err.Error())
 		} else if err != nil {
 			return err
