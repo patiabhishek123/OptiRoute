@@ -2,10 +2,11 @@
 
 Z = travel + lateness + fleet + overtime + unserved (+ stability, Phase 5).
 
-Schedules use earliest times: each vehicle leaves its depot at ``shift_start`` and waits when it
-arrives before a window opens. With absolute shift limits this is exact for lateness, overtime
-and feasibility; a later departure only shortens idle time and is applied when routes are
-published.
+Schedules use earliest service starts: they are computed as if the vehicle left at
+``shift_start``, which with absolute shift limits is exact for lateness, overtime and
+feasibility. The reported departure is then pushed back by the wait at the first stop, so no
+vehicle arrives early and idles at its first customer. Every service start is unchanged, so
+costs and feasibility are unaffected; only the first arrival and the route duration move.
 """
 
 from __future__ import annotations
@@ -30,11 +31,12 @@ class RouteStats:
     stops: tuple[StopTiming, ...]
     distance: int  # metres, depot to depot
     finish: int  # arrival time back at the end depot
-    duration: int  # finish - shift_start, including waiting
+    duration: int  # finish - depart, including waiting after the first stop
     late: int  # summed lateness, seconds
     overtime: int  # seconds beyond the regular shift end
     weight: int
     volume: int
+    depart: int = 0  # depot departure: shift_start, delayed by the first stop's wait
 
     @property
     def used(self) -> bool:
@@ -111,16 +113,23 @@ def simulate_route(instance: Instance, vehicle: int, stops: list[int]) -> RouteS
     distance += d
     t += travel
 
+    # Leave later instead of idling at the first customer: service starts stay identical.
+    first = timings[0]
+    wait = first.start - first.arrival
+    depart = v.shift_start + wait
+    timings[0] = StopTiming(first.node, first.start, first.start, first.departure, first.late)
+
     return RouteStats(
         vehicle=vehicle,
         stops=tuple(timings),
         distance=distance,
         finish=t,
-        duration=t - v.shift_start,
+        duration=t - depart,
         late=late_sum,
         overtime=max(0, t - v.regular_end),
         weight=weight,
         volume=volume,
+        depart=depart,
     )
 
 

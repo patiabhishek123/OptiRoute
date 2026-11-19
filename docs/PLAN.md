@@ -21,26 +21,35 @@ Design references: [ARCHITECTURE.md](ARCHITECTURE.md). Full spec: `OptiRoute_Tec
 
 All work is in `services/optimizer/`. No HTTP, no database.
 
-- [ ] `contracts/`: pydantic `SolveRequest` / `SolveResult` (ARCHITECTURE §4); export JSON Schema to `packages/api-contracts/optimizer/v1/`
-- [ ] `matrices/`: `MatrixProvider` interface + `HaversineMatrixProvider`
-- [ ] `validation/evaluate.py`: shared cost breakdown (travel, lateness, fleet, overtime, unserved)
-- [ ] `validation/validate.py`: independent hard-constraint checker. Write tests for **every** row of spec §18.4 (duplicate assignment, capacity, invalid vehicle, hard TW, shift exceeded, disconnected route, invalid depot sequence)
-- [ ] `solvers/baseline/`: nearest neighbour (S0)
-- [ ] `solvers/clarke_wright/`: savings with capacity and TW feasibility checks (S1)
-- [ ] `solvers/ortools/`: full mapping from ARCHITECTURE §5, CW warm start, GLS, time limit, seed (S2)
-- [ ] `benchmarks/`: Solomon loader (C1, R1, RC1 sets) + a runner that writes CSV (instance, algorithm, seed, Z, distance, vehicles, late, feasible, ms)
-- [ ] CLI: `optiroute solve problem.json --algorithm S2 --time-limit 15`
+- [x] `contracts/`: pydantic `SolveRequest` / `SolveResult` (ARCHITECTURE §4); export JSON Schema to `packages/api-contracts/optimizer/v1/`
+- [x] `matrices/`: `MatrixProvider` interface + `HaversineMatrixProvider`
+- [x] `validation/evaluate.py`: shared cost breakdown (travel, lateness, fleet, overtime, unserved)
+- [x] `validation/validate.py`: independent hard-constraint checker. Write tests for **every** row of spec §18.4 (duplicate assignment, capacity, invalid vehicle, hard TW, shift exceeded, disconnected route, invalid depot sequence). Completed-stop reassignment waits for Phase 5
+- [x] `solvers/baseline.py`: Solomon (1987) time-oriented nearest neighbour (S0); distance-only NN stranded customers on R1/RC1
+- [x] `solvers/clarke_wright.py`: directional savings with O(1) merge checks for time windows and capacity, multi-depot clustering, real-vehicle assignment, insertion repair (S1). 56/56 feasible, median gap 20.0%
+- [x] `solvers/ortools_gls.py`: full mapping from ARCHITECTURE §5, CW warm start, GLS, time limit (S2). OR-Tools has no seed, so time-limited runs are only reproducible on the same machine
+- [x] `benchmarks/`: Solomon loader for all 56 instances, using DIMACS distances so the published C101 best-known solution validates and scores exactly. Checksum-pinned download (`make fetch-solomon`), best-known distances in `solomon_manifest.csv`, and a runner that writes CSV with the gap (`make bench`)
+- [x] CLI: `optiroute solve | bench | fetch-solomon | schema`
+
+**Baseline (S0, `experiments/reports/solomon-20261119-194312.csv`):** 56/56 feasible; gap to best-known distance is 0.00% best, 69.2% median, 69.7% mean.
+
+**M1 met (2026-11-19):** S0/S1/S2 all 56/56 validator-clean. Median gap: S0 69.2%, S1 20.0%, S2 2.1% (10 s). See `experiments/reports/m1-solomon.md`.
 
 **Exit (M1):** S0–S2 return validator-clean solutions on all Solomon 100-customer C1/R1/RC1 instances. Benchmark runs are reproducible with a fixed seed. Gap to best-known solutions is reported.
 
 ## Phase 2: Road network + optimizer service (weeks 3–4) → M2
 
-- [ ] `services/routing/osrm/`: script to download the regional extract and run `osrm-extract/partition/customize` (MLD); add the OSRM service to compose with a raised `--max-table-size`
-- [ ] `OsrmMatrixProvider`: deduplication, chunking, retries/timeouts, Redis cache (ARCHITECTURE §8)
-- [ ] Synthetic regional instance generator (depots + orders inside the extract's bounding box, realistic windows and demands), seeded
-- [ ] Worker: Redis Streams consumer, job state machine, conditional status transitions, cancellation checks, retry/DLQ rules (ARCHITECTURE §7)
-- [ ] Minimal FastAPI app: `GET /health`, `POST /validate`
-- [ ] Result metadata: solver version, git SHA, matrix source and key, timings
+- [x] `services/routing/osrm/build.sh` (`make osrm-build`): Odisha, clipped from the Geofabrik eastern zone. Memory/CPU-capped Docker steps, 58 s, peak 1.2 GB. OSRM compose service (`make osrm-up`, `--max-table-size 1000`, idles at ~300 MB)
+- [x] `OsrmMatrixProvider`: deduplication, chunking, retries/timeouts, Redis cache (ARCHITECTURE §8)
+- [x] Synthetic regional instance generator (`optiroute generate`): inland Odisha hubs, realistic windows and demands, van/truck fleet, seeded
+- [x] Worker (`optiroute worker`): Redis Streams consumer, job state machine, conditional status transitions, cancellation checks, retry/DLQ rules, lease heartbeat (ARCHITECTURE §7). `optiroute submit` stands in for the Go API
+- [x] Minimal FastAPI app (`optiroute serve`): `GET /internal/v1/health`, `POST /internal/v1/validate`
+- [x] Result metadata: solver version, git SHA, matrix source and key, timings
+
+**M2 met (2026-11-19).** On a synthetic Odisha instance (500 orders, 20 vehicles, 2 depots):
+- the 502×502 OSRM matrix took 2.4 s (51 ms on a cache hit); road distance is 1.46× straight-line
+- S2 within a 10 s limit: feasible, 2,740 km, every order served, about 4.5% cheaper than S1
+- a worker SIGKILLed mid-solve was reclaimed after the lease and completed (attempts = 2)
 
 **Exit (M2):** a job inserted by hand into Postgres plus a stream message produces a validated result using real OSRM distances. 500 orders on the regional extract solve within the time limit. Killing the worker mid-job leads to reclaim and completion.
 

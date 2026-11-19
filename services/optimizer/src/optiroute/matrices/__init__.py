@@ -1,9 +1,10 @@
-"""Travel distance/time matrices. ``OsrmMatrixProvider`` arrives in Phase 2."""
+"""Travel distance/time matrices: OSRM road network, or haversine for tests/offline."""
 
 from collections.abc import Sequence
 from typing import Protocol
 
 from optiroute.matrices.haversine import HaversineMatrixProvider
+from optiroute.matrices.osrm import DictMatrixCache, MatrixCache, OsrmError, OsrmMatrixProvider
 from optiroute.model import Matrix
 
 
@@ -15,4 +16,11 @@ class MatrixProvider(Protocol):
         ...
 
 
-__all__ = ["HaversineMatrixProvider", "MatrixProvider"]
+__all__ = [
+    "DictMatrixCache",
+    "HaversineMatrixProvider",
+    "MatrixCache",
+    "MatrixProvider",
+    "OsrmError",
+    "OsrmMatrixProvider",
+]

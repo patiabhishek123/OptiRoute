@@ -63,6 +63,76 @@ def _fetch(args: argparse.Namespace) -> int:
     return 0
 
 
+def _generate(args: argparse.Namespace) -> int:
+    from optiroute.benchmarks.synthetic import generate
+
+    req = generate(args.orders, args.vehicles, depots=args.depots, seed=args.seed)
+    text = req.model_dump_json(indent=2)
+    if args.output:
+        Path(args.output).write_text(text + "\n")
+    else:
+        print(text)
+    return 0
+
+
+def _worker(args: argparse.Namespace) -> int:
+    import logging
+
+    from optiroute.worker import Worker, WorkerConfig
+
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+    Worker(WorkerConfig.from_env()).run_forever()
+    return 0
+
+
+def _submit(args: argparse.Namespace) -> int:
+    """Dev stand-in for the Go API: insert a QUEUED job and publish it (Phase 3 replaces this)."""
+    import json
+    import os
+
+    import psycopg
+    import redis
+    from psycopg.types.json import Jsonb
+
+    from optiroute.contracts.v1 import SolverConfig, SolveRequest
+
+    req = SolveRequest.model_validate_json(Path(args.request).read_text())
+    overrides = {"algorithm": args.algorithm, "time_limit_s": args.time_limit}
+    if any(overrides.values()):
+        solver = {**req.solver.model_dump(), **{k: v for k, v in overrides.items() if v}}
+        req = req.model_copy(update={"solver": SolverConfig.model_validate(solver)})
+    snapshot = json.loads(req.model_dump_json())
+    with psycopg.connect(os.environ["DATABASE_URL"], autocommit=True) as db:
+        if db.execute("SELECT to_regclass('core.organizations')").fetchone()[0] is not None:
+            db.execute(  # jobs reference an organization once the Go schema is migrated
+                "INSERT INTO core.organizations (id, name, slug) VALUES (%s, 'Dev', %s) "
+                "ON CONFLICT DO NOTHING",
+                (args.org, f"dev-{args.org[:8]}"),
+            )
+        (job_id,) = db.execute(
+            """INSERT INTO optimization.jobs
+               (organization_id, kind, planning_date, input_snapshot, solver_config)
+               VALUES (%s, %s, %s, %s, %s) RETURNING id""",
+            (
+                args.org,
+                req.kind.value,
+                req.planning_date,
+                Jsonb(snapshot),
+                Jsonb(snapshot["solver"]),
+            ),
+        ).fetchone()
+    redis.Redis.from_url(os.environ["REDIS_URL"]).xadd("opti:jobs", {"job_id": str(job_id)})
+    print(job_id)
+    return 0
+
+
+def _serve(args: argparse.Namespace) -> int:
+    import uvicorn
+
+    uvicorn.run("optiroute.api:create_app", factory=True, host=args.host, port=args.port)
+    return 0
+
+
 def _schema(args: argparse.Namespace) -> int:
     from optiroute.contracts import export_schemas
 
@@ -95,6 +165,29 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("instances", nargs="*", help="default: all 56")
     p.add_argument("--dest", default=str(DEFAULT_SOLOMON_DIR))
     p.set_defaults(func=_fetch)
+
+    p = sub.add_parser("generate", help="seeded synthetic Odisha SolveRequest")
+    p.add_argument("--orders", type=int, default=100)
+    p.add_argument("--vehicles", type=int, default=10)
+    p.add_argument("--depots", type=int, default=2)
+    p.add_argument("--seed", type=int, default=0)
+    p.add_argument("-o", "--output", help="write JSON here (default: stdout)")
+    p.set_defaults(func=_generate)
+
+    p = sub.add_parser("worker", help="consume optimization jobs from Redis (env-configured)")
+    p.set_defaults(func=_worker)
+
+    p = sub.add_parser("submit", help="dev: insert a job for a SolveRequest file and enqueue it")
+    p.add_argument("request")
+    p.add_argument("-a", "--algorithm", help="override solver.algorithm (contract name)")
+    p.add_argument("--time-limit", type=int, help="override solver.time_limit_s")
+    p.add_argument("--org", default="00000000-0000-0000-0000-000000000001")
+    p.set_defaults(func=_submit)
+
+    p = sub.add_parser("serve", help="internal HTTP API: /internal/v1/health and /validate")
+    p.add_argument("--host", default="127.0.0.1")
+    p.add_argument("--port", type=int, default=8081)
+    p.set_defaults(func=_serve)
 
     p = sub.add_parser("schema", help="export contract JSON Schemas")
     p.add_argument("--out", default=str(DEFAULT_SCHEMA_DIR))
