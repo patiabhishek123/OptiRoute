@@ -49,3 +49,10 @@ sql:
       go:
         <<: *go
         out: internal/fleet/store
+  - engine: postgresql
+    schema: migrations
+    queries: internal/orders/queries.sql
+    gen:
+      go:
+        <<: *go
+        out: internal/orders/store

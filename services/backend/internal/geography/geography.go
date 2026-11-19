@@ -171,3 +171,23 @@ func (h *Handler) update(w http.ResponseWriter, r *http.Request) error {
 }
 
 func ptr[T any](v T) *T { return &v }
+
+// ResolveDepot finds one of the organization's depots by UUID or by (case-insensitive) name, so
+// CSV imports can say "Bhubaneswar Hub" instead of a UUID.
+func (s *Service) ResolveDepot(ctx context.Context, org uuid.UUID, ref string) (uuid.UUID, error) {
+	ref = strings.TrimSpace(ref)
+	if id, err := uuid.Parse(ref); err == nil {
+		d, err := s.Get(ctx, org, id)
+		return d.ID, err
+	}
+	ids, err := store.New(s.pool).FindDepotByName(ctx, store.FindDepotByNameParams{OrganizationID: org, Name: ref})
+	switch {
+	case err != nil:
+		return uuid.Nil, err
+	case len(ids) == 0:
+		return uuid.Nil, httpx.NotFound("depot")
+	case len(ids) > 1:
+		return uuid.Nil, httpx.Unprocessable("AMBIGUOUS_DEPOT", "several depots share this name; use its id", nil)
+	}
+	return ids[0], nil
+}
