@@ -4,7 +4,8 @@ import { Layout } from "./components/Layout";
 import { Login } from "./pages/Login";
 import { Fleet } from "./pages/Fleet";
 import { Orders } from "./pages/Orders";
-import { Placeholder } from "./pages/Placeholder";
+import { PlanDetail } from "./pages/PlanDetail";
+import { Plans } from "./pages/Plans";
 import { Signup } from "./pages/Signup";
 
 function RequireAuth() {
@@ -24,7 +25,8 @@ export function App() {
         <Route element={<Layout />}>
           <Route path="/orders" element={<Orders />} />
           <Route path="/fleet" element={<Fleet />} />
-          <Route path="/plans" element={<Placeholder title="Plans" />} />
+          <Route path="/plans" element={<Plans />} />
+          <Route path="/plans/:id" element={<PlanDetail />} />
           <Route path="*" element={<Navigate to="/orders" replace />} />
         </Route>
       </Route>

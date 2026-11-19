@@ -15,6 +15,7 @@ test("set up a fleet and import orders", async ({ page }) => {
 
   // Depot
   await page.getByRole("link", { name: "Fleet" }).click();
+  await expect(page.getByRole("heading", { name: "Fleet", level: 1 })).toBeVisible();
   await page.getByLabel("Name").fill("Bhubaneswar Hub");
   await page.getByLabel("Latitude").fill("20.2961");
   await page.getByLabel("Longitude").fill("85.8245");
@@ -48,6 +49,7 @@ test("set up a fleet and import orders", async ({ page }) => {
 
   // Orders: a bad file is rejected with line/column errors and imports nothing...
   await page.getByRole("link", { name: "Orders" }).click();
+  await expect(page.getByRole("heading", { name: "Orders", level: 1 })).toBeVisible();
   await page.getByLabel("Planning date").fill(PLANNING_DATE);
   await page.getByLabel("CSV file").setInputFiles({ name: "orders.csv", mimeType: "text/csv", buffer: Buffer.from(badCsv) });
   await page.getByRole("button", { name: "Import" }).click();
