@@ -66,3 +66,72 @@ export function Badge({ children, tone = "slate" }: { children: ReactNode; tone?
   }[tone];
   return <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${tones}`}>{children}</span>;
 }
+
+export function Select({ label, children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement> & { label?: string }) {
+  const select = (
+    <select className="mt-1 block w-full rounded-md border-0 bg-white px-2 py-1.5 text-sm ring-1 ring-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none" {...props}>
+      {children}
+    </select>
+  );
+  if (!label) return select;
+  return (
+    <label className="block text-sm">
+      <span className="font-medium text-slate-700">{label}</span>
+      {select}
+    </label>
+  );
+}
+
+/** Minimal data table: columns are header + cell renderer. */
+export function Table<T>({ rows, columns, rowKey, empty = "Nothing here yet." }: {
+  rows: T[];
+  columns: { header: string; cell: (row: T) => ReactNode; className?: string }[];
+  rowKey: (row: T) => string;
+  empty?: string;
+}) {
+  if (rows.length === 0) return <p className="py-6 text-center text-sm text-slate-500">{empty}</p>;
+  return (
+    <div className="-mx-4 overflow-x-auto">
+      <table className="min-w-full divide-y divide-slate-200 text-sm">
+        <thead>
+          <tr>
+            {columns.map((c) => (
+              <th key={c.header} className={`px-4 py-2 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase ${c.className ?? ""}`}>
+                {c.header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {rows.map((r) => (
+            <tr key={rowKey(r)} className="hover:bg-slate-50">
+              {columns.map((c) => (
+                <td key={c.header} className={`px-4 py-2 whitespace-nowrap ${c.className ?? ""}`}>
+                  {c.cell(r)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: { id: T; label: string }[]; value: T; onChange: (t: T) => void }) {
+  return (
+    <div className="flex gap-1 border-b border-slate-200" role="tablist">
+      {tabs.map((t) => (
+        <button
+          key={t.id}
+          role="tab"
+          aria-selected={t.id === value}
+          onClick={() => onChange(t.id)}
+          className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${t.id === value ? "border-indigo-600 text-indigo-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
