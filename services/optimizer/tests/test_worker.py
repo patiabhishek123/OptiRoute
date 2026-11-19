@@ -56,7 +56,7 @@ def make_worker(db):
         tag = uuid.uuid4().hex[:8]
         cfg = WorkerConfig(
             database_url=DB_URL, redis_url=REDIS_URL, stream=f"test:{tag}:jobs",
-            events=f"test:{tag}:events", dlq=f"test:{tag}:dlq", block_ms=100, **overrides,
+            events=f"test:{tag}:events", dlq=f"test:{tag}:dlq", **{"block_ms": 100, **overrides},
         )  # fmt: skip
         streams.extend([cfg.stream, cfg.events, cfg.dlq])
         w = Worker(cfg, provider or HaversineMatrixProvider())
@@ -188,3 +188,26 @@ def test_redis_matrix_cache_roundtrip(db):
     assert cache.get(key) == m and 0 < client.ttl(key) <= 60
     assert cache.get(key + "x") is None
     client.delete(key)
+
+
+def test_idle_read_longer_than_redis_default_timeout(db, make_worker):
+    # Regression: redis-py 8 defaults socket_timeout to 5 s; a 6 s idle block must not raise.
+    w = make_worker(block_ms=6000)
+    assert w.run_once() == 0
+
+
+def test_transient_redis_error_does_not_kill_the_loop(db, make_worker, monkeypatch):
+    w = make_worker()
+    calls = []
+
+    def flaky():
+        calls.append(1)
+        if len(calls) == 1:
+            raise redis.ConnectionError("redis restarted")
+        w.stop()
+        return 0
+
+    monkeypatch.setattr(w, "run_once", flaky)
+    monkeypatch.setattr(w._stop, "wait", lambda timeout: False)  # no real backoff sleep
+    w.run_forever()
+    assert len(calls) == 2
