@@ -18,6 +18,7 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/config"
+	"github.com/patiabhishek123/OptiRoute/services/backend/internal/dispatch"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/database"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/outbox"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/server"
@@ -93,6 +94,8 @@ func serve(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 	relayCtx, stopRelay := context.WithCancel(ctx)
 	defer stopRelay()
 	go relay.Run(relayCtx)
+	// Turn completed optimization jobs into DRAFT route plans.
+	go (&dispatch.Consumer{Pool: pool, Redis: rdb, Log: log}).Run(relayCtx)
 
 	errc := make(chan error, 1)
 	go func() {
