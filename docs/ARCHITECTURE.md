@@ -132,8 +132,10 @@ Use the four Postgres schemas and tables from spec §8. Changes and additions:
 - **`core.outbox`**: `(id, topic, payload JSONB, created_at, published_at)`.
 - **`routing.order_assignments`** (`order_id PRIMARY KEY, route_id, route_plan_id`) enforces "one active route per order". Activation deletes and reinserts the plan's rows in one transaction, and the PK rejects duplicates.
 - Published plans are immutable. Any change creates a new `route_plans.version`.
-- Overtime cost and max overtime live in the objective profile (org-level config) for V1, not on vehicles.
-- Every table carries `organization_id`. Every query is org-scoped in the repository layer.
+- Max overtime is per driver (`drivers.max_overtime_minutes`); the overtime *cost* is an objective-profile weight.
+- **Tenant isolation is enforced by the database.** Every tenant table has `UNIQUE (organization_id, id)`, and children reference parents through composite foreign keys `(organization_id, parent_id)`, so a cross-organization reference is impossible even with a buggy query. Every query is also org-scoped.
+- Other DB-enforced invariants: one ACTIVE plan per org and day (partial unique index), one plan per optimization job, no double-booked driver or vehicle per day, CHECK constraints on statuses, capacities and windows.
+- `routing.route_plans` also stores `algorithm`, the `objective` cost breakdown and `unassigned_order_ids` (migration 00003), so plans can be compared without the job's raw result.
 
 ## 7. Job reliability
 
@@ -162,6 +164,38 @@ Reasons:
 - Every schema change is a reviewed SQL diff, with no auto-migrate drift.
 - If an ORM is ever wanted, the Go-native option is ent with Atlas migrations. Decide before Phase 3.
 
+## 8b. Go backend (Phase 3)
+
+Modules in `services/backend/internal/`: `identity`, `geography`, `fleet`, `orders`, `planning`, `dispatch`, with shared code in `platform/` (auth, httpx, database, outbox, testdb).
+Each module owns its `queries.sql` and its sqlc-generated `store` package.
+
+- **API conventions:**
+  - Errors use one envelope, `{"error": {"code", "message", "details"}}`.
+  - Validation failures return 422 with details per field (per row for CSV).
+  - Another organization's resource is a 404, indistinguishable from a missing one.
+  - Lists take `limit` (max 500) and `offset`.
+  - Writes need ADMIN or DISPATCHER; reads any role.
+- **Auth (decided: in-house JWT):**
+  - Access tokens are 15-minute HS256 JWTs carrying user, org and role.
+  - Refresh tokens are opaque and stored only as SHA-256 hashes. They rotate on every use, and replaying a rotated token revokes its whole family.
+  - Passwords use bcrypt, cost 12.
+- **Order lifecycle:** `PENDING → PLANNED` (on activation) `→ DISPATCHED → DELIVERED | FAILED` (tracking, Phase 5). `CANCELLED` is only reachable from `PENDING`, and only `PENDING` orders are editable. A `PLANNED` order is a stop on the active plan, so changing it means re-optimizing.
+- **Planning reads across modules (deliberate exception to spec §6.1):** the snapshot builder reads orders, vehicles, drivers and depots directly (read-only) in one `REPEATABLE READ` transaction. A snapshot needs one consistent view of the day, which separate interface calls cannot give. All writes stay inside their owning module.
+- **Jobs:**
+  - `POST /optimization/jobs` writes the job and an outbox row in one transaction. `platform/outbox.Relay`, running in `api serve`, publishes the row to `opti:jobs` (`FOR UPDATE SKIP LOCKED`, at-least-once).
+  - An `Idempotency-Key` makes retries return the original job.
+  - Validation errors are specific: `NO_VEHICLES`, `NO_ORDERS`, `INVALID_SHIFT`, `WINDOW_BEFORE_PLANNING_DATE`.
+- **Plans:**
+  - `dispatch.Consumer` (also in `api serve`) turns `COMPLETED` job events into DRAFT plans, idempotently.
+  - Malformed results, constraint violations, and events still failing after 5 deliveries go to `opti:job-events:dlq`, so one bad event can never block the stream.
+  - **Drafts never change order state:** several drafts can compete for one day.
+- **Activation:**
+  - Locking: `DRAFT → APPROVED → ACTIVE` in one transaction, under a per-org/day advisory lock.
+  - 409 `STALE_PLAN` if any order changed since the solve.
+  - An existing ACTIVE plan is replaced only with `{"replace_active": true}`, and never once its routes have started (that is Phase 5 re-optimization). Orders the new plan drops go back to `PENDING` and are listed in the response.
+  - On success: `order_assignments` rows are swapped, orders become `PLANNED`, and an `opti:plan-events` outbox event is written.
+- **Testing:** each Go test package gets its own throwaway migrated PostgreSQL database (`platform/testdb`). Tests run with `-race`, and CI runs them against Postgres and Redis service containers. `sqlc diff` in CI catches stale generated code, and a Go test validates every job snapshot against the optimizer's JSON Schema.
+
 ## 9. Out of scope for V1
 
 Pickup-and-delivery, live traffic, Kafka, Kubernetes, the driver app ecosystem, enterprise integrations, LLM explanations, and automatic driver-vehicle pairing.
@@ -169,6 +203,6 @@ Pickup-and-delivery, live traffic, Kafka, Kubernetes, the driver app ecosystem, 
 ## 10. Open questions
 
 1. ~~**Region**~~: decided as **Odisha** (clipped from the Geofabrik eastern zone; timezone `Asia/Kolkata`). Other regions: set `REGION`, `ZONE_URL` and `BBOX` for `build.sh`.
-2. **Auth**: build JWT auth in-house (fast to ship) or use an external IdP such as Cognito or Auth0?
+2. ~~**Auth**~~: decided as **in-house JWT** (§8b). An external IdP could later be added behind the same `auth.Verifier` interface.
 3. **Default time-window mode** for pilot customers: hard or soft?
 4. **Real pilot data:** the Kaggle notebooks in this folder lack coordinates and time windows, so they can't serve as routing instances. Use Solomon/CVRPLIB plus a synthetic regional generator until a pilot operator shares anonymized data.

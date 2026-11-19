@@ -4,7 +4,7 @@ Cost-aware vehicle-routing and dispatch platform for regional logistics operator
 It solves a heterogeneous capacitated VRP with time windows (HCVRPTW) using heuristics + Google OR-Tools + custom local search,
 and supports dispatcher approval and dynamic re-optimization (new orders, breakdowns).
 
-**Status:** Phases 1–2 complete (milestones M1 and M2 met). Next: Phase 3, the Go backend. See [docs/PLAN.md](docs/PLAN.md).
+**Status:** Phases 1–3 complete (milestones M1–M3 met): optimizer, road network, and the Go business API through plan activation. Next: Phase 4, the dispatcher dashboard. See [docs/PLAN.md](docs/PLAN.md).
 
 ## Quick start
 
@@ -13,19 +13,17 @@ Requires [uv](https://docs.astral.sh/uv/), Docker and make.
 ```bash
 cp .env.example .env   # optional; defaults work without it
 make setup             # Python 3.12 venv + optimizer deps
-make lint test         # ruff + pytest
+make lint test         # ruff + pytest, gofmt + go vet + go test -race
 make up                # Postgres+PostGIS on :15432, Redis on :16379
-make db-migrate        # create optimization.jobs (idempotent)
+make db-migrate        # apply database migrations (goose, via the Go API binary)
 
 make osrm-build        # one-off: Odisha road network (~1 min, memory-capped)
 make osrm-up           # OSRM on :15000
 make worker            # optimizer worker (Postgres + Redis + OSRM)
+make api               # Go API on :8080 (migrates on start; runs the outbox relay and plan consumer)
 
-# in another shell: submit a synthetic 500-order job, as the Go API will
-cd services/optimizer
-uv run optiroute generate --orders 500 --vehicles 20 -o /tmp/odisha-500.json
-set -a; . ../../.env.example; set +a
-uv run optiroute submit /tmp/odisha-500.json -a ORTOOLS_GLS --time-limit 10
+# in another shell, with api + worker running: the whole flow through the public API
+make e2e               # signup -> fleet -> CSV of 100 orders -> job -> plan -> approve -> activate
 
 make down              # stop everything, including OSRM
 ```
