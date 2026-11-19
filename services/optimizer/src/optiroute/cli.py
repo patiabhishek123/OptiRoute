@@ -63,6 +63,18 @@ def _fetch(args: argparse.Namespace) -> int:
     return 0
 
 
+def _generate(args: argparse.Namespace) -> int:
+    from optiroute.benchmarks.synthetic import generate
+
+    req = generate(args.orders, args.vehicles, depots=args.depots, seed=args.seed)
+    text = req.model_dump_json(indent=2)
+    if args.output:
+        Path(args.output).write_text(text + "\n")
+    else:
+        print(text)
+    return 0
+
+
 def _schema(args: argparse.Namespace) -> int:
     from optiroute.contracts import export_schemas
 
@@ -95,6 +107,14 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("instances", nargs="*", help="default: all 56")
     p.add_argument("--dest", default=str(DEFAULT_SOLOMON_DIR))
     p.set_defaults(func=_fetch)
+
+    p = sub.add_parser("generate", help="seeded synthetic Odisha SolveRequest")
+    p.add_argument("--orders", type=int, default=100)
+    p.add_argument("--vehicles", type=int, default=10)
+    p.add_argument("--depots", type=int, default=2)
+    p.add_argument("--seed", type=int, default=0)
+    p.add_argument("-o", "--output", help="write JSON here (default: stdout)")
+    p.set_defaults(func=_generate)
 
     p = sub.add_parser("schema", help="export contract JSON Schemas")
     p.add_argument("--out", default=str(DEFAULT_SCHEMA_DIR))
