@@ -71,9 +71,17 @@ func serve(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 	rdb := redis.NewClient(ropts)
 	defer rdb.Close()
 
+	handler, err := server.New(server.Deps{
+		Log: log, DB: pool, Redis: rdb, JWTSecret: cfg.JWTSecret,
+		AccessTokenTTL: cfg.AccessTokenTTL, RefreshTokenTTL: cfg.RefreshTokenTTL,
+		AllowSignup: cfg.AllowSignup,
+	})
+	if err != nil {
+		return err
+	}
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           server.New(server.Deps{Log: log, DB: pool, Redis: rdb}),
+		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,

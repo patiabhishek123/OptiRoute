@@ -70,5 +70,7 @@ jobs:
         run: |
           unformatted=$(gofmt -l .)
           if [ -n "$unformatted" ]; then echo "$unformatted"; exit 1; fi
+      - name: sqlc generated code is up to date
+        run: go tool sqlc diff
       - run: go vet ./...
       - run: go test -race ./...

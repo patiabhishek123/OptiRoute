@@ -2,7 +2,7 @@ OPTIMIZER := services/optimizer
 BACKEND := services/backend
 DEV_ENV := set -a && . $(CURDIR)/.env.example && set +a
 
-.PHONY: help setup lint format test schemas fetch-solomon bench osrm-build osrm-up db-migrate worker api up down logs
+.PHONY: help setup lint format test schemas fetch-solomon bench osrm-build osrm-up db-migrate worker sqlc api up down logs
 
 help:  ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -20,6 +20,9 @@ format:  ## Auto-format
 test:  ## Run all tests (Python + Go; integration tests need `make up`)
 	cd $(OPTIMIZER) && uv run pytest
 	cd $(BACKEND) && go test -race ./...
+
+sqlc:  ## Regenerate Go data-access code from SQL (sqlc)
+	cd $(BACKEND) && go tool sqlc generate
 
 api:  ## Run the Go API on :8080 (migrates on start)
 	cd $(BACKEND) && $(DEV_ENV) && MIGRATE_ON_START=true go run ./cmd/api serve

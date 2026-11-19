@@ -4,9 +4,12 @@ package database
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib" // database/sql driver "pgx", used by goose only
 	"github.com/pressly/goose/v3"
@@ -52,4 +55,31 @@ func Migrate(ctx context.Context, url string, log *slog.Logger) error {
 	}
 	log.Info("database schema up to date", "version", version)
 	return nil
+}
+
+// WithTx runs fn in a transaction: committed if fn returns nil, rolled back otherwise.
+func WithTx(ctx context.Context, pool *pgxpool.Pool, fn func(pgx.Tx) error) error {
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback(ctx) }() // no-op after a successful commit
+	if err := fn(tx); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
+// IsUniqueViolation reports whether err is a unique-constraint violation on the named constraint
+// (any unique constraint when name is "").
+func IsUniqueViolation(err error, name string) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23505" && (name == "" || pgErr.ConstraintName == name)
+}
+
+// IsForeignKeyViolation reports whether err violates a foreign key (a reference to a row that does
+// not exist, or belongs to another organization).
+func IsForeignKeyViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23503"
 }

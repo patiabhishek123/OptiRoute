@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 
@@ -30,7 +31,7 @@ func TestHealthAndReadiness(t *testing.T) {
 	t.Run("ready when dependencies answer", func(t *testing.T) {
 		rdb := redis.NewClient(opts)
 		defer rdb.Close()
-		srv := httptest.NewServer(server.New(server.Deps{Log: log, DB: pool, Redis: rdb}))
+		srv := httptest.NewServer(mustNew(t, server.Deps{Log: log, DB: pool, Redis: rdb}))
 		defer srv.Close()
 
 		for path, want := range map[string]int{"/healthz": 200, "/readyz": 200} {
@@ -51,7 +52,7 @@ func TestHealthAndReadiness(t *testing.T) {
 	t.Run("not ready when redis is down", func(t *testing.T) {
 		rdb := redis.NewClient(&redis.Options{Addr: "127.0.0.1:9", MaxRetries: -1})
 		defer rdb.Close()
-		srv := httptest.NewServer(server.New(server.Deps{Log: log, DB: pool, Redis: rdb}))
+		srv := httptest.NewServer(mustNew(t, server.Deps{Log: log, DB: pool, Redis: rdb}))
 		defer srv.Close()
 
 		resp, err := http.Get(srv.URL + "/readyz")
@@ -67,4 +68,15 @@ func TestHealthAndReadiness(t *testing.T) {
 			t.Errorf("got %d %v, want 503 with database ok and redis failing", resp.StatusCode, body)
 		}
 	})
+}
+
+func mustNew(t *testing.T, d server.Deps) http.Handler {
+	t.Helper()
+	d.JWTSecret = []byte("test-secret-test-secret-test-secret!")
+	d.AccessTokenTTL, d.RefreshTokenTTL = 15*time.Minute, time.Hour
+	h, err := server.New(d)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return h
 }
