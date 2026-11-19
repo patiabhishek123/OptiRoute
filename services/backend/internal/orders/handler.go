@@ -239,7 +239,8 @@ func (h *Handler) update(w http.ResponseWriter, r *http.Request) error {
 	return h.writeOrder(w, r, org, id, http.StatusOK)
 }
 
-// cancel is allowed while PENDING or PLANNED; dispatched or finished orders are history.
+// cancel is allowed while PENDING. A PLANNED order is a stop on the active plan: removing it is a
+// re-optimization (Phase 5), not a status flip that would leave a stop for a cancelled order.
 func (h *Handler) cancel(w http.ResponseWriter, r *http.Request) error {
 	org := auth.MustPrincipal(r).OrgID
 	id, err := httpx.PathUUID(r, "id", "order")
@@ -255,7 +256,11 @@ func (h *Handler) cancel(w http.ResponseWriter, r *http.Request) error {
 		} else if err != nil {
 			return err
 		}
-		return httpx.Conflict("ORDER_NOT_CANCELLABLE", "an order that is "+status+" cannot be cancelled")
+		msg := "an order that is " + status + " cannot be cancelled"
+		if status == "PLANNED" {
+			msg += "; it is on the active plan (re-plan the day to drop it)"
+		}
+		return httpx.Conflict("ORDER_NOT_CANCELLABLE", msg)
 	} else if err != nil {
 		return err
 	}

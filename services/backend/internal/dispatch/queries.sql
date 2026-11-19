@@ -91,3 +91,73 @@ FROM routing.route_stops s
 JOIN operations.orders o ON o.id = s.order_id
 WHERE s.organization_id = @organization_id AND s.route_id = @route_id
 ORDER BY s.sequence_number;
+
+-- ---------------------------------------------------------------- lifecycle
+
+-- name: LockPlan :one
+SELECT id, status, planning_date FROM routing.route_plans
+WHERE organization_id = @organization_id AND id = @id
+FOR UPDATE;
+
+-- name: ApprovePlan :exec
+UPDATE routing.route_plans SET status = 'APPROVED', approved_by = @approved_by, approved_at = now()
+WHERE id = @id;
+
+-- name: RejectPlan :exec
+UPDATE routing.route_plans SET status = 'REJECTED' WHERE id = @id;
+
+-- name: ActivePlanForDay :one
+SELECT id FROM routing.route_plans
+WHERE organization_id = @organization_id AND planning_date = @planning_date AND status = 'ACTIVE'
+FOR UPDATE;
+
+-- True once any route or stop of the plan has moved past its planned state (tracking, Phase 5).
+-- name: PlanHasStarted :one
+SELECT EXISTS (
+    SELECT 1 FROM routing.routes r
+    LEFT JOIN routing.route_stops s ON s.route_id = r.id
+    WHERE r.route_plan_id = @route_plan_id AND (r.status <> 'PLANNED' OR s.stop_status <> 'PENDING')
+)::boolean AS started;
+
+-- Orders in the plan that can no longer be planned: anything not PENDING, except orders that are
+-- PLANNED on the plan being replaced.
+-- name: StaleOrders :many
+SELECT o.id, o.external_order_id, o.status
+FROM routing.route_stops s
+JOIN routing.routes r ON r.id = s.route_id
+JOIN operations.orders o ON o.id = s.order_id
+WHERE r.route_plan_id = @route_plan_id
+  AND NOT (o.status = 'PENDING'
+       OR (o.status = 'PLANNED' AND EXISTS (
+            SELECT 1 FROM routing.order_assignments a
+            WHERE a.order_id = o.id AND a.route_plan_id = sqlc.narg(replaced_plan_id)::uuid)))
+ORDER BY o.external_order_id;
+
+-- name: SupersedePlan :exec
+UPDATE routing.route_plans SET status = 'SUPERSEDED' WHERE id = @id;
+
+-- name: DeleteAssignmentsForPlan :many
+DELETE FROM routing.order_assignments WHERE route_plan_id = @route_plan_id RETURNING order_id;
+
+-- name: InsertAssignmentsForPlan :execrows
+INSERT INTO routing.order_assignments (order_id, organization_id, route_id, route_plan_id)
+SELECT s.order_id, s.organization_id, s.route_id, r.route_plan_id
+FROM routing.route_stops s JOIN routing.routes r ON r.id = s.route_id
+WHERE r.route_plan_id = @route_plan_id;
+
+-- name: MarkPlanOrdersPlanned :execrows
+UPDATE operations.orders SET status = 'PLANNED'
+WHERE id IN (SELECT order_id FROM routing.order_assignments WHERE route_plan_id = @route_plan_id);
+
+-- Orders of a superseded plan that the new plan does not cover go back to PENDING.
+-- name: RevertUnassignedOrders :many
+UPDATE operations.orders o SET status = 'PENDING'
+WHERE o.id = ANY(@order_ids::uuid[]) AND o.status = 'PLANNED'
+  AND NOT EXISTS (SELECT 1 FROM routing.order_assignments a WHERE a.order_id = o.id)
+RETURNING o.id;
+
+-- name: ActivatePlan :exec
+UPDATE routing.route_plans SET status = 'ACTIVE', activated_at = now() WHERE id = @id;
+
+-- name: InsertPlanEvent :exec
+INSERT INTO core.outbox (topic, payload) VALUES ('opti:plan-events', @payload);

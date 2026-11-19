@@ -85,13 +85,14 @@ type Handler struct {
 
 func NewHandler(pool *pgxpool.Pool, log *slog.Logger) *Handler { return &Handler{pool, log} }
 
-// Routes mounts the plan read API (spec §12.5). Approval and activation follow in the next module step.
+// Routes mounts the route-plan API (spec §12.5): reads plus approve/reject/activate.
 func (h *Handler) Routes(mux *http.ServeMux, authn func(http.Handler) http.Handler) {
 	read := func(f httpx.HandlerFunc) http.Handler { return authn(httpx.Handle(h.log, f)) }
 	mux.Handle("GET /api/v1/route-plans", read(h.listPlans))
 	mux.Handle("GET /api/v1/route-plans/{id}", read(h.getPlan))
 	mux.Handle("GET /api/v1/routes/{id}", read(h.getRoute))
 	mux.Handle("GET /api/v1/routes/{id}/stops", read(h.getRouteStops))
+	h.lifecycleRoutes(mux, authn)
 }
 
 func (h *Handler) listPlans(w http.ResponseWriter, r *http.Request) error {
