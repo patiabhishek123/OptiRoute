@@ -49,3 +49,11 @@ infrastructure/              docker, monitoring, deployment
 experiments/                 notebooks and benchmark reports
 docker-compose.yml
 ```
+
+## Git workflow
+
+- `main`: milestone releases only; it is updated from `development` when a milestone passes.
+- `development`: the integration branch. Every change lands here.
+- Each small, significant change gets its own branch off `development`, named `feature/…`, `fix/…`, `chore/…` or `docs/…`.
+  Lint and tests must pass at the branch tip. Merge it with `git merge --no-ff` so the branch stays visible in history.
+- CI runs on pushes to `main` and `development`, and on pull requests.
