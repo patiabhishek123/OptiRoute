@@ -29,6 +29,16 @@ ORG = "00000000-0000-0000-0000-0000000000aa"
 REQUEST = json.loads((FIXTURES / "solve-request.json").read_text())
 
 
+def _ensure_org(conn, org_id: str, slug: str) -> None:
+    """Jobs reference core.organizations once the Go migrations (00002+) are applied."""
+    if conn.execute("SELECT to_regclass('core.organizations')").fetchone()[0] is not None:
+        conn.execute(
+            "INSERT INTO core.organizations (id, name, slug) VALUES (%s, %s, %s) "
+            "ON CONFLICT (id) DO NOTHING",
+            (org_id, slug, slug),
+        )
+
+
 def _up_section(sql: str) -> str:
     return re.search(r"-- \+goose Up(.*?)-- \+goose Down", sql, re.S).group(1)
 
@@ -43,6 +53,7 @@ def db():
     exists = conn.execute("SELECT to_regclass('optimization.jobs')").fetchone()[0]
     if exists is None:
         conn.execute(_up_section(MIGRATION.read_text()))
+    _ensure_org(conn, ORG, "worker-tests")
     yield conn
     conn.execute("DELETE FROM optimization.jobs WHERE organization_id = %s", (ORG,))
     conn.close()

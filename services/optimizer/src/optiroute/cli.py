@@ -103,6 +103,12 @@ def _submit(args: argparse.Namespace) -> int:
         req = req.model_copy(update={"solver": SolverConfig.model_validate(solver)})
     snapshot = json.loads(req.model_dump_json())
     with psycopg.connect(os.environ["DATABASE_URL"], autocommit=True) as db:
+        if db.execute("SELECT to_regclass('core.organizations')").fetchone()[0] is not None:
+            db.execute(  # jobs reference an organization once the Go schema is migrated
+                "INSERT INTO core.organizations (id, name, slug) VALUES (%s, 'Dev', %s) "
+                "ON CONFLICT DO NOTHING",
+                (args.org, f"dev-{args.org[:8]}"),
+            )
         (job_id,) = db.execute(
             """INSERT INTO optimization.jobs
                (organization_id, kind, planning_date, input_snapshot, solver_config)
