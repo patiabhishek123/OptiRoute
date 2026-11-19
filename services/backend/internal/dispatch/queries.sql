@@ -161,3 +161,23 @@ UPDATE routing.route_plans SET status = 'ACTIVE', activated_at = now() WHERE id 
 
 -- name: InsertPlanEvent :exec
 INSERT INTO core.outbox (topic, payload) VALUES ('opti:plan-events', @payload);
+
+-- ---------------------------------------------------------------- geometry
+
+-- Waypoints per route: its depot, then the stops in sequence (the route returns to the depot).
+-- name: PlanWaypoints :many
+SELECT r.id AS route_id,
+       ST_Y(dp.location::geometry)::float8 AS depot_lat,
+       ST_X(dp.location::geometry)::float8 AS depot_lon,
+       coalesce(array_agg(ST_Y(o.delivery_location::geometry) ORDER BY s.sequence_number)
+                FILTER (WHERE s.id IS NOT NULL), '{}')::float8[] AS stop_lats,
+       coalesce(array_agg(ST_X(o.delivery_location::geometry) ORDER BY s.sequence_number)
+                FILTER (WHERE s.id IS NOT NULL), '{}')::float8[] AS stop_lons
+FROM routing.routes r
+JOIN operations.vehicles v ON v.id = r.vehicle_id
+JOIN core.depots dp ON dp.id = v.depot_id
+LEFT JOIN routing.route_stops s ON s.route_id = r.id
+LEFT JOIN operations.orders o ON o.id = s.order_id
+WHERE r.organization_id = @organization_id AND r.route_plan_id = @route_plan_id
+GROUP BY r.id, dp.location
+ORDER BY r.id;

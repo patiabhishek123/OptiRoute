@@ -18,6 +18,7 @@ import (
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/planning"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/auth"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/httpx"
+	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/osrm"
 )
 
 type Deps struct {
@@ -28,6 +29,7 @@ type Deps struct {
 	AccessTokenTTL  time.Duration
 	RefreshTokenTTL time.Duration
 	AllowSignup     bool
+	OSRM            *osrm.Client // optional
 }
 
 // New returns the root handler. Business routes live under /api/v1 (spec §12).
@@ -47,6 +49,7 @@ func New(d Deps) (http.Handler, error) {
 	orders.NewHandler(d.DB, depots, d.Log).Routes(mux, authn)
 	planning.NewHandler(d.DB, d.Log).Routes(mux, authn)
 	dispatch.NewHandler(d.DB, d.Log).Routes(mux, authn)
+	(&dispatch.Geometry{Pool: d.DB, Redis: d.Redis, OSRM: d.OSRM, Log: d.Log}).Routes(mux, authn)
 
 	// Liveness: the process is serving. Readiness: its dependencies answer.
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {

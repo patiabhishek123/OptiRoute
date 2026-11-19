@@ -20,6 +20,7 @@ import (
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/config"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/dispatch"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/database"
+	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/osrm"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/outbox"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/server"
 )
@@ -76,7 +77,7 @@ func serve(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 	handler, err := server.New(server.Deps{
 		Log: log, DB: pool, Redis: rdb, JWTSecret: cfg.JWTSecret,
 		AccessTokenTTL: cfg.AccessTokenTTL, RefreshTokenTTL: cfg.RefreshTokenTTL,
-		AllowSignup: cfg.AllowSignup,
+		AllowSignup: cfg.AllowSignup, OSRM: osrmClient(cfg.OSRMURL),
 	})
 	if err != nil {
 		return err
@@ -117,4 +118,11 @@ func serve(ctx context.Context, cfg config.Config, log *slog.Logger) error {
 		}
 	}
 	return nil
+}
+
+func osrmClient(url string) *osrm.Client {
+	if url == "" {
+		return nil
+	}
+	return osrm.New(url)
 }

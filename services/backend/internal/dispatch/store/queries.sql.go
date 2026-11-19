@@ -664,6 +664,66 @@ func (q *Queries) PlanHasStarted(ctx context.Context, routePlanID uuid.UUID) (bo
 	return started, err
 }
 
+const planWaypoints = `-- name: PlanWaypoints :many
+
+SELECT r.id AS route_id,
+       ST_Y(dp.location::geometry)::float8 AS depot_lat,
+       ST_X(dp.location::geometry)::float8 AS depot_lon,
+       coalesce(array_agg(ST_Y(o.delivery_location::geometry) ORDER BY s.sequence_number)
+                FILTER (WHERE s.id IS NOT NULL), '{}')::float8[] AS stop_lats,
+       coalesce(array_agg(ST_X(o.delivery_location::geometry) ORDER BY s.sequence_number)
+                FILTER (WHERE s.id IS NOT NULL), '{}')::float8[] AS stop_lons
+FROM routing.routes r
+JOIN operations.vehicles v ON v.id = r.vehicle_id
+JOIN core.depots dp ON dp.id = v.depot_id
+LEFT JOIN routing.route_stops s ON s.route_id = r.id
+LEFT JOIN operations.orders o ON o.id = s.order_id
+WHERE r.organization_id = $1 AND r.route_plan_id = $2
+GROUP BY r.id, dp.location
+ORDER BY r.id
+`
+
+type PlanWaypointsParams struct {
+	OrganizationID uuid.UUID
+	RoutePlanID    uuid.UUID
+}
+
+type PlanWaypointsRow struct {
+	RouteID  uuid.UUID
+	DepotLat float64
+	DepotLon float64
+	StopLats []float64
+	StopLons []float64
+}
+
+// ---------------------------------------------------------------- geometry
+// Waypoints per route: its depot, then the stops in sequence (the route returns to the depot).
+func (q *Queries) PlanWaypoints(ctx context.Context, arg PlanWaypointsParams) ([]PlanWaypointsRow, error) {
+	rows, err := q.db.Query(ctx, planWaypoints, arg.OrganizationID, arg.RoutePlanID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []PlanWaypointsRow
+	for rows.Next() {
+		var i PlanWaypointsRow
+		if err := rows.Scan(
+			&i.RouteID,
+			&i.DepotLat,
+			&i.DepotLon,
+			&i.StopLats,
+			&i.StopLons,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const rejectPlan = `-- name: RejectPlan :exec
 UPDATE routing.route_plans SET status = 'REJECTED' WHERE id = $1
 `

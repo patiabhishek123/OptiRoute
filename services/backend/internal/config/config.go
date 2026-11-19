@@ -21,6 +21,7 @@ type Config struct {
 	AccessTokenTTL  time.Duration // ACCESS_TOKEN_TTL, default 15m
 	RefreshTokenTTL time.Duration // REFRESH_TOKEN_TTL, default 720h (30 days)
 	AllowSignup     bool          // ALLOW_SIGNUP: public organization signup, default true
+	OSRMURL         string        // OSRM_URL: road geometry for the map (optional; straight lines without it)
 }
 
 func Load() (Config, error) {
@@ -33,6 +34,7 @@ func Load() (Config, error) {
 		AccessTokenTTL:  15 * time.Minute,
 		RefreshTokenTTL: 30 * 24 * time.Hour,
 		AllowSignup:     true,
+		OSRMURL:         os.Getenv("OSRM_URL"),
 	}
 	var errs []error
 	if cfg.DatabaseURL == "" {
