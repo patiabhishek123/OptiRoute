@@ -89,3 +89,10 @@ func IsCheckViolation(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == "23514"
 }
+
+// IsPermanentDataError reports errors that retrying the same statement cannot fix: data exceptions
+// (SQLSTATE class 22) and integrity-constraint violations (class 23).
+func IsPermanentDataError(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && len(pgErr.Code) == 5 && (pgErr.Code[:2] == "22" || pgErr.Code[:2] == "23")
+}

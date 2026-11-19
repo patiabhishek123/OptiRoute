@@ -252,3 +252,81 @@ func TestPlanReadAPI(t *testing.T) {
 		}
 	}
 }
+
+func newTestConsumer(t *testing.T, f *fixture) (*dispatch.Consumer, *redis.Client) {
+	redisURL := os.Getenv("TEST_REDIS_URL")
+	if redisURL == "" {
+		redisURL = "redis://localhost:16379/15"
+	}
+	opts, _ := redis.ParseURL(redisURL)
+	rdb := redis.NewClient(opts)
+	tag := uuid.NewString()[:8]
+	c := &dispatch.Consumer{Pool: f.pool, Redis: rdb, Log: slog.New(slog.NewTextHandler(io.Discard, nil)),
+		Stream: "test:" + tag + ":events", DLQ: "test:" + tag + ":dlq", Name: "t", Block: 50 * time.Millisecond}
+	t.Cleanup(func() { rdb.Del(f.ctx, c.Stream, c.DLQ); rdb.Close() })
+	if err := c.EnsureGroup(f.ctx); err != nil {
+		t.Fatal(err)
+	}
+	return c, rdb
+}
+
+// Regression: a job whose result references another organization's vehicle violates the tenant
+// foreign key. That can never succeed, so it must be dead-lettered, not retried forever.
+func TestConstraintViolationIsDeadLetteredNotRetried(t *testing.T) {
+	f := setup(t)
+	c, rdb := newTestConsumer(t, f)
+	var foreign uuid.UUID
+	if err := f.pool.QueryRow(f.ctx, `WITH d AS (INSERT INTO core.depots (organization_id, name, location)
+		VALUES ($1, 'B', 'SRID=4326;POINT(85 20)') RETURNING id)
+		INSERT INTO operations.vehicles (organization_id, depot_id, registration_number, vehicle_type,
+		  capacity_weight_kg, capacity_volume_m3, cost_per_km) SELECT $1, id, 'B1', 'van', 1, 1, 1 FROM d RETURNING id`,
+		f.orgB).Scan(&foreign); err != nil {
+		t.Fatal(err)
+	}
+	result := f.resultFor(false)
+	result["routes"].([]any)[0].(map[string]any)["vehicle_id"] = foreign
+	job := f.insertJob("COMPLETED", result)
+	rdb.XAdd(f.ctx, &redis.XAddArgs{Stream: c.Stream, Values: map[string]any{"job_id": job.String(), "status": "COMPLETED"}})
+
+	if _, err := c.RunOnce(f.ctx); err != nil {
+		t.Fatalf("RunOnce returned %v; a permanent error must not be retried", err)
+	}
+	if n := rdb.XLen(f.ctx, c.DLQ).Val(); n != 1 {
+		t.Errorf("dead letters = %d, want 1", n)
+	}
+	if n := f.count("SELECT count(*) FROM routing.route_plans"); n != 0 {
+		t.Errorf("a partial plan was committed (%d)", n)
+	}
+}
+
+// Regression: an event that fails transiently forever is dead-lettered after MaxDeliveries, and the
+// events behind it still get processed.
+func TestRepeatedFailureCannotBlockTheStream(t *testing.T) {
+	f := setup(t)
+	c, rdb := newTestConsumer(t, f)
+	c.LeaseMs, c.MaxDeliveries = time.Millisecond, 3
+	bad := uuid.New()
+	c.MaterializeFunc = func(ctx context.Context, pool *pgxpool.Pool, job uuid.UUID) (uuid.UUID, bool, error) {
+		if job == bad {
+			return uuid.Nil, false, errors.New("database briefly unavailable")
+		}
+		return dispatch.Materialize(ctx, pool, job)
+	}
+	good := f.insertJob("COMPLETED", f.resultFor(false))
+	rdb.XAdd(f.ctx, &redis.XAddArgs{Stream: c.Stream, Values: map[string]any{"job_id": bad.String(), "status": "COMPLETED"}})
+	rdb.XAdd(f.ctx, &redis.XAddArgs{Stream: c.Stream, Values: map[string]any{"job_id": good.String(), "status": "COMPLETED"}})
+
+	for range 10 {
+		_, _ = c.RunOnce(f.ctx)
+		time.Sleep(5 * time.Millisecond)
+	}
+	if n := f.count("SELECT count(*) FROM routing.route_plans WHERE optimization_job_id = $1", good); n != 1 {
+		t.Errorf("event behind the failing one was not processed (plans=%d)", n)
+	}
+	if n := rdb.XLen(f.ctx, c.DLQ).Val(); n != 1 {
+		t.Errorf("dead letters = %d, want 1", n)
+	}
+	if p := rdb.XPending(f.ctx, c.Stream, dispatch.ConsumerGrp).Val(); p.Count != 0 {
+		t.Errorf("%d events still pending", p.Count)
+	}
+}
