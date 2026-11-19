@@ -8,11 +8,14 @@ async function run(page: Page, algorithm: string, seconds: string) {
   await page.getByRole("button", { name: "Run optimization" }).click();
 }
 
-// Spec §22 steps 30-35: baseline vs optimized, review, approve, activate, export. Needs worker + OSRM.
+// Spec §22 steps 30-35 at MVP scale (5-10 vehicles, 50-100 orders): baseline vs optimized, review,
+// approve, activate, export. Needs the optimizer worker (OSRM optional).
+const VANS = 6;
+const ORDERS = 80; // ~640 kg on 6 x 150 kg vans
 test("compare baseline and optimized, then dispatch", async ({ page }) => {
   await requireApi(page);
   const slug = await signUp(page, "dispatch");
-  await seedDay(page, slug, { vans: 3, orders: 30, capacityKg: 100 });
+  await seedDay(page, slug, { vans: VANS, orders: ORDERS, capacityKg: 150 });
 
   await page.getByRole("link", { name: "Plans" }).click();
   await expect(page.getByRole("heading", { name: "Plans", level: 1 })).toBeVisible();
@@ -46,7 +49,7 @@ test("compare baseline and optimized, then dispatch", async ({ page }) => {
   const csv = await readFile((await (await download).path())!, "utf8");
   const lines = csv.trim().split("\n");
   expect(lines[0]).toBe("vehicle,driver,sequence,order_id,customer,lat,lon,eta,departure,window_start,window_end");
-  expect(lines).toHaveLength(31);
+  expect(lines).toHaveLength(ORDERS + 1); // every order routed
 
   // A driver's printable route sheet.
   const routes = page.getByRole("list", { name: "Routes" }).getByRole("listitem");
@@ -62,7 +65,7 @@ test("compare baseline and optimized, then dispatch", async ({ page }) => {
   await page.getByRole("link", { name: "Orders" }).click();
   await expect(page.getByRole("heading", { name: "Orders", level: 1 })).toBeVisible();
   await page.getByLabel("Planning date").fill(PLANNING_DATE);
-  await expect(page.getByText(`30 orders on ${PLANNING_DATE} · 30 planned`)).toBeVisible();
+  await expect(page.getByText(`${ORDERS} orders on ${PLANNING_DATE} · ${ORDERS} planned`)).toBeVisible();
 
   // Activating the baseline now needs explicit confirmation to replace the active plan.
   await page.getByRole("link", { name: "Plans" }).click();

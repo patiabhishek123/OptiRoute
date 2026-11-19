@@ -196,6 +196,35 @@ Each module owns its `queries.sql` and its sqlc-generated `store` package.
   - On success: `order_assignments` rows are swapped, orders become `PLANNED`, and an `opti:plan-events` outbox event is written.
 - **Testing:** each Go test package gets its own throwaway migrated PostgreSQL database (`platform/testdb`). Tests run with `-race`, and CI runs them against Postgres and Redis service containers. `sqlc diff` in CI catches stale generated code, and a Go test validates every job snapshot against the optimizer's JSON Schema.
 
+## 8c. Dispatcher dashboard (Phase 4)
+
+`apps/dashboard`: Vite, React 19, TypeScript, React Router, TanStack Query, Tailwind, MapLibre GL. All versions are pinned.
+
+- **Same origin:** the dev server proxies `/api` to the Go API, so there is no CORS. In production the API and the static build go behind one origin.
+- **Tokens:**
+  - The access token lives in memory; the refresh token in `sessionStorage`, so it survives a reload but not closing the tab.
+  - A 401 triggers one refresh and a retry. Concurrent requests share that refresh, because two parallel refreshes would replay a rotated token and trip reuse detection.
+  - Follow-up: an HttpOnly refresh cookie set by the API would keep the token out of JavaScript entirely.
+- **Times:** all times are shown in the organization's timezone, not the browser's.
+- **Live job status:** by polling, only while a job is running. SSE is deferred.
+- **Map:**
+  - Light OpenFreeMap basemap, with no key; override with `VITE_MAP_STYLE_URL`.
+  - Road lines come from `GET /route-plans/{id}/geometry`.
+  - MapLibre's web worker is loaded via `setWorkerUrl` as a bundled asset: Vite's pre-bundling otherwise drops it, and the map stays blank.
+  - The map records what it actually drew on `idle` (`data-rendered-routes` / `data-rendered-stops`), and the browser tests assert on that.
+- **Route colours** follow the dataviz method:
+  - The validated 8-hue categorical palette is assigned in fixed order by vehicle registration.
+  - The validator shows that no 8-hue palette separates all pairs for colour-vision deficiency on a map (worst ΔE 3.2), so colour is never the only cue. Routes 9–16 are dashed and 17+ are neutral. A legend list, selection highlighting, numbered stops and tooltips carry identity.
+  - With 3 or fewer routes, the hues validate even for all pairs.
+- **Planned stop times are service starts** (`max(arrival, service_start)`): a van early for a window waits before reaching the customer, so no ETA precedes its window.
+- **Browser tests:** `make dashboard-e2e` locally. CI job `e2e` runs the real API, worker, Postgres and Redis without OSRM (haversine matrices, straight-line geometry), which exercises the degraded modes.
+  - Locally, restart `make dashboard` after switching git branches. A long-running Vite dev server can miss files that git replaced by rename, and Playwright reuses it.
+- **Follow-ups:**
+  - Optimizer: price idle time too (e.g. a span cost), because the optimized plan currently trades waiting for distance (route time +44% in the M4 comparison).
+  - SSE for job status.
+  - HttpOnly refresh cookie.
+  - Driver PWA (Phase 5).
+
 ## 9. Out of scope for V1
 
 Pickup-and-delivery, live traffic, Kafka, Kubernetes, the driver app ecosystem, enterprise integrations, LLM explanations, and automatic driver-vehicle pairing.
