@@ -10,18 +10,32 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 
+	"github.com/patiabhishek123/OptiRoute/services/backend/internal/identity"
+	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/auth"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/httpx"
 )
 
 type Deps struct {
-	Log   *slog.Logger
-	DB    *pgxpool.Pool
-	Redis *redis.Client
+	Log             *slog.Logger
+	DB              *pgxpool.Pool
+	Redis           *redis.Client
+	JWTSecret       []byte
+	AccessTokenTTL  time.Duration
+	RefreshTokenTTL time.Duration
+	AllowSignup     bool
 }
 
 // New returns the root handler. Business routes live under /api/v1 (spec §12).
-func New(d Deps) http.Handler {
+func New(d Deps) (http.Handler, error) {
 	mux := http.NewServeMux()
+
+	tokens, err := identity.NewTokens(d.JWTSecret, d.AccessTokenTTL)
+	if err != nil {
+		return nil, err
+	}
+	authn := func(h http.Handler) http.Handler { return auth.Authenticate(tokens, h) }
+	identity.NewHandler(identity.NewService(d.DB, tokens, d.RefreshTokenTTL), d.Log, d.AllowSignup).
+		Routes(mux, authn)
 
 	// Liveness: the process is serving. Readiness: its dependencies answer.
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -41,5 +55,5 @@ func New(d Deps) http.Handler {
 		httpx.WriteJSON(w, status, checks)
 	})
 
-	return httpx.Middleware(d.Log, mux)
+	return httpx.Middleware(d.Log, mux), nil
 }
