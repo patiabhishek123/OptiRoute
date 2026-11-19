@@ -20,10 +20,22 @@ def test_travel_cost_and_schedule(line):
 
 def test_waiting_and_service_times(line):
     inst = with_customer(with_customer(line, 1, tw_start=150, service=20), 2, service=30)
-    s1, s2, s3 = simulate_route(inst, 0, [1, 2, 3]).stops
-    assert (s1.arrival, s1.start, s1.departure) == (100, 150, 170)
+    stats = simulate_route(inst, 0, [1, 2, 3])
+    s1, s2, s3 = stats.stops
+    # The 50 s wait at node 1 becomes a later departure: arrive exactly when service starts.
+    assert stats.depart == 50 and (s1.arrival, s1.start, s1.departure) == (150, 150, 170)
     assert (s2.arrival, s2.start, s2.departure) == (270, 270, 300)
     assert s3.arrival == 400
+    assert stats.duration == stats.finish - 50
+
+
+def test_waiting_after_first_stop_is_kept(line):
+    # Waiting at a later stop cannot be removed by departing later without moving service starts.
+    inst = with_customer(line, 2, tw_start=500)
+    stats = simulate_route(inst, 0, [1, 2, 3])
+    s1, s2, _ = stats.stops
+    assert stats.depart == 0 and s1.arrival == 100
+    assert (s2.arrival, s2.start) == (200, 500)
 
 
 def test_lateness_cost_scales_with_priority():
