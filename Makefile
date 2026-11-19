@@ -3,7 +3,7 @@ BACKEND := services/backend
 DASHBOARD := apps/dashboard
 DEV_ENV := set -a && . $(CURDIR)/.env.example && set +a
 
-.PHONY: help setup lint format test schemas fetch-solomon bench osrm-build osrm-up db-migrate worker sqlc api dashboard e2e up down logs
+.PHONY: help setup lint format test schemas fetch-solomon bench osrm-build osrm-up db-migrate worker sqlc api dashboard dashboard-e2e e2e up down logs
 
 help:  ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -58,6 +58,9 @@ worker:  ## Run the optimizer worker against local Postgres/Redis (and OSRM if u
 
 dashboard:  ## Dashboard dev server on :5173 (proxies /api to :8080)
 	cd $(DASHBOARD) && npm run dev
+
+dashboard-e2e:  ## Browser tests (Playwright) against the real API (needs `make api`)
+	cd $(DASHBOARD) && npx playwright test
 
 e2e:  ## End-to-end check through the public API (needs `make api` and `make worker` running)
 	python3 scripts/e2e_api.py

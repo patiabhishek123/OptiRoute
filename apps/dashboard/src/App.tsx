@@ -2,6 +2,8 @@ import { Navigate, Outlet, Route, Routes, useLocation } from "react-router";
 import { useAuth } from "./auth/AuthContext";
 import { Layout } from "./components/Layout";
 import { Login } from "./pages/Login";
+import { Fleet } from "./pages/Fleet";
+import { Orders } from "./pages/Orders";
 import { Placeholder } from "./pages/Placeholder";
 import { Signup } from "./pages/Signup";
 
@@ -20,8 +22,8 @@ export function App() {
       <Route path="/signup" element={<Signup />} />
       <Route element={<RequireAuth />}>
         <Route element={<Layout />}>
-          <Route path="/orders" element={<Placeholder title="Orders" />} />
-          <Route path="/fleet" element={<Placeholder title="Fleet" />} />
+          <Route path="/orders" element={<Orders />} />
+          <Route path="/fleet" element={<Fleet />} />
           <Route path="/plans" element={<Placeholder title="Plans" />} />
           <Route path="*" element={<Navigate to="/orders" replace />} />
         </Route>
