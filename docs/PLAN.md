@@ -17,7 +17,7 @@ Design references: [ARCHITECTURE.md](ARCHITECTURE.md). Full spec: `OptiRoute_Tec
 
 **Exit:** `make lint test` passes in CI (smoke tests: package import, CLI, OR-Tools solves a 4-node TSP).
 
-## Phase 1: Optimization engine (weeks 1–2) → M1
+## Phase 1: Optimization engine (weeks 1–2) → M1 ✅
 
 All work is in `services/optimizer/`. No HTTP, no database.
 
@@ -37,7 +37,7 @@ All work is in `services/optimizer/`. No HTTP, no database.
 
 **Exit (M1):** S0–S2 return validator-clean solutions on all Solomon 100-customer C1/R1/RC1 instances. Benchmark runs are reproducible with a fixed seed. Gap to best-known solutions is reported.
 
-## Phase 2: Road network + optimizer service (weeks 3–4) → M2
+## Phase 2: Road network + optimizer service (weeks 3–4) → M2 ✅
 
 - [x] `services/routing/osrm/build.sh` (`make osrm-build`): Odisha, clipped from the Geofabrik eastern zone. Memory/CPU-capped Docker steps, 58 s, peak 1.2 GB. OSRM compose service (`make osrm-up`, `--max-table-size 1000`, idles at ~300 MB)
 - [x] `OsrmMatrixProvider`: deduplication, chunking, retries/timeouts, Redis cache (ARCHITECTURE §8)
@@ -53,16 +53,20 @@ All work is in `services/optimizer/`. No HTTP, no database.
 
 **Exit (M2):** a job inserted by hand into Postgres plus a stream message produces a validated result using real OSRM distances. 500 orders on the regional extract solve within the time limit. Killing the worker mid-job leads to reclaim and completion.
 
-## Phase 3: Go backend (weeks 5–6) → M3
+## Phase 3: Go backend (weeks 5–6) → M3 ✅
 
-- [ ] `services/backend`: `cmd/api`, config from env, structured logging (`slog`), goose migrations, sqlc
-- [ ] Migrations: schemas and tables from spec §8 plus the additions in ARCHITECTURE §6
-- [ ] `identity`: orgs, users, login/refresh (JWT), org-scoped middleware
-- [ ] `geography` / `fleet`: depots, vehicles, drivers, daily vehicle↔driver pairing
-- [ ] `orders`: CRUD, CSV bulk import (validate and report per row), cancel
-- [ ] `planning`: snapshot builder (unit conversion happens here), job create/get/cancel, idempotency keys, outbox relay, job-event consumer → plan materialization
-- [ ] `dispatch`: get plans, approve/reject/activate (`order_assignments` swap, version check)
-- [ ] Integration tests with testcontainers: Go→Postgres, Go→Redis, full job round-trip with a real worker
+- [x] `services/backend`: `cmd/api` (`serve` and `migrate`), env config, `slog` JSON logs, goose migrations embedded in the binary, sqlc. Go 1.25 with pinned dependencies
+- [x] Migrations 00001–00003: spec §8 tables plus the ARCHITECTURE §6 additions. Tenant isolation and other invariants are enforced by the database
+- [x] `identity`: signup, login, rotating refresh tokens with reuse detection, logout, users (ADMIN), org-scoped middleware
+- [x] `geography` / `fleet`: depots (PostGIS), vehicles, drivers, transactional daily vehicle↔driver pairing
+- [x] `orders`: CRUD, all-or-nothing CSV import with errors per row (1,000 rows in ~100 ms), PENDING-only edit/cancel
+- [x] `planning`: snapshot builder (REPEATABLE READ, unit conversion), jobs with `Idempotency-Key`, outbox relay, status/result/cancel
+- [x] Job-event consumer → DRAFT plan materialization (idempotent, poison events dead-lettered)
+- [x] `dispatch`: plan reads, approve/reject/activate (`order_assignments` swap, stale-plan check, explicit `replace_active`)
+- [x] Integration tests against real Postgres/Redis: each test package gets its own throwaway migrated database instead of testcontainers (same isolation, no Docker-in-Docker in CI). All Go tests run with `-race`
+
+**M3 met (2026-11-19).** `make e2e` (API + worker + OSRM running) goes through the public API: signup → depot → 6 paired vans → CSV import of 100 orders → job (idempotent retry returns the same job) → worker on OSRM → DRAFT plan v1 (4 routes, 100 stops, 347 km, 0 late, 0 unassigned) → approve → activate (100 orders PLANNED, one ACTIVE plan) → a new job answers 422 NO_ORDERS.
+Two bugs were found and fixed on the way: idle-at-first-stop schedules, and a poison event that could block the plan consumer.
 
 **Exit (M3):** create org → depots → vehicles → import 100 orders via CSV → `POST /optimization/jobs` → plan available via the API. Duplicate requests with the same idempotency key create one job.
 

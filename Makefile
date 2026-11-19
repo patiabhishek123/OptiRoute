@@ -2,7 +2,7 @@ OPTIMIZER := services/optimizer
 BACKEND := services/backend
 DEV_ENV := set -a && . $(CURDIR)/.env.example && set +a
 
-.PHONY: help setup lint format test schemas fetch-solomon bench osrm-build osrm-up db-migrate worker sqlc api up down logs
+.PHONY: help setup lint format test schemas fetch-solomon bench osrm-build osrm-up db-migrate worker sqlc api e2e up down logs
 
 help:  ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -51,6 +51,9 @@ db-migrate:  ## Apply database migrations (goose, embedded in the Go API)
 worker:  ## Run the optimizer worker against local Postgres/Redis (and OSRM if up)
 	cd $(OPTIMIZER) && set -a && . ../../.env.example && set +a && \
 		OSRM_DATASET_VERSION_FILE=../routing/osrm/data/DATASET_VERSION uv run optiroute worker
+
+e2e:  ## End-to-end check through the public API (needs `make api` and `make worker` running)
+	python3 scripts/e2e_api.py
 
 up:  ## Start Postgres+PostGIS and Redis
 	docker compose up -d --wait
