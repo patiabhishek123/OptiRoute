@@ -168,18 +168,21 @@ type RoutingRoute struct {
 }
 
 type RoutingRoutePlan struct {
-	ID                uuid.UUID
-	OrganizationID    uuid.UUID
-	OptimizationJobID uuid.UUID
-	PlanningDate      pgtype.Date
-	Version           int32
-	Status            string
-	TotalDistanceKm   float64
-	TotalCost         float64
-	CreatedAt         time.Time
-	ApprovedBy        *uuid.UUID
-	ApprovedAt        *time.Time
-	ActivatedAt       *time.Time
+	ID                 uuid.UUID
+	OrganizationID     uuid.UUID
+	OptimizationJobID  uuid.UUID
+	PlanningDate       pgtype.Date
+	Version            int32
+	Status             string
+	TotalDistanceKm    float64
+	TotalCost          float64
+	CreatedAt          time.Time
+	ApprovedBy         *uuid.UUID
+	ApprovedAt         *time.Time
+	ActivatedAt        *time.Time
+	Algorithm          string
+	Objective          []byte
+	UnassignedOrderIds []uuid.UUID
 }
 
 type RoutingRouteStop struct {
