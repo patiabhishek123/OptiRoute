@@ -20,6 +20,7 @@ import (
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/dispatch"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/auth"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/auth/authtest"
+	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/osrm"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/testdb"
 )
 
@@ -328,5 +329,93 @@ func TestRepeatedFailureCannotBlockTheStream(t *testing.T) {
 	}
 	if p := rdb.XPending(f.ctx, c.Stream, dispatch.ConsumerGrp).Val(); p.Count != 0 {
 		t.Errorf("%d events still pending", p.Count)
+	}
+}
+
+func TestPlanGeometry(t *testing.T) {
+	f := setup(t)
+	planID, _, err := dispatch.Materialize(f.ctx, f.pool, f.insertJob("COMPLETED", f.resultFor(false)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	redisURL := os.Getenv("TEST_REDIS_URL")
+	if redisURL == "" {
+		redisURL = "redis://localhost:16379/15"
+	}
+	opts, _ := redis.ParseURL(redisURL)
+	rdb := redis.NewClient(opts)
+	defer rdb.Close()
+
+	osrmUp, requests := true, 0
+	fake := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests++
+		if !osrmUp {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(`{"code":"InternalError"}`))
+			return
+		}
+		// A "road" with one extra bend between every pair of waypoints.
+		coords := [][2]float64{{85.82, 20.29}, {85.83, 20.31}, {85.83, 20.30}, {85.84, 20.31}, {85.82, 20.29}}
+		_ = json.NewEncoder(w).Encode(map[string]any{"code": "Ok", "routes": []any{map[string]any{"geometry": map[string]any{"coordinates": coords}}}})
+	}))
+	defer fake.Close()
+
+	g := &dispatch.Geometry{Pool: f.pool, Redis: rdb, OSRM: osrm.New(fake.URL), Log: slog.New(slog.NewTextHandler(io.Discard, nil))}
+	v := authtest.Verifier{
+		"a": {UserID: uuid.New(), OrgID: f.org, Role: auth.RoleViewer},
+		"b": {UserID: uuid.New(), OrgID: f.orgB, Role: auth.RoleViewer},
+	}
+	mux := http.NewServeMux()
+	g.Routes(mux, func(h http.Handler) http.Handler { return auth.Authenticate(v, h) })
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	get := func(token string) (int, []dispatch.RouteLine) {
+		req, _ := http.NewRequest("GET", srv.URL+"/api/v1/route-plans/"+planID.String()+"/geometry", nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		var body struct{ Routes []dispatch.RouteLine }
+		_ = json.NewDecoder(resp.Body).Decode(&body)
+		return resp.StatusCode, body.Routes
+	}
+
+	routeKeys := func() {
+		rows, _ := f.pool.Query(f.ctx, "SELECT id FROM routing.routes")
+		for rows.Next() {
+			var id uuid.UUID
+			_ = rows.Scan(&id)
+			rdb.Del(f.ctx, "geom:route:"+id.String())
+		}
+		rows.Close()
+	}
+	routeKeys()
+	defer routeKeys()
+
+	code, lines := get("a")
+	if code != 200 || len(lines) != 2 || lines[0].Source != "OSRM" || len(lines[0].Coordinates) != 5 {
+		t.Fatalf("geometry = %d %+v", code, lines)
+	}
+	if requests != 2 {
+		t.Errorf("OSRM requests = %d, want one per route", requests)
+	}
+	if _, again := get("a"); requests != 2 || again[0].Source != "OSRM" {
+		t.Errorf("second call hit OSRM again (requests=%d); routes are immutable and should be cached", requests)
+	}
+
+	routeKeys()
+	osrmUp = false
+	_, lines = get("a")
+	for _, l := range lines {
+		// Straight fallback: depot -> stops -> depot.
+		first, last := l.Coordinates[0], l.Coordinates[len(l.Coordinates)-1]
+		if l.Source != "STRAIGHT" || first != last || first != (osrm.Point{85.82, 20.29}) {
+			t.Errorf("fallback line %+v", l)
+		}
+	}
+	if code, _ := get("b"); code != 404 {
+		t.Errorf("other org = %d, want 404", code)
 	}
 }
