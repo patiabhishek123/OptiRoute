@@ -27,11 +27,13 @@ All work is in `services/optimizer/`. No HTTP, no database.
 - [x] `validation/validate.py`: independent hard-constraint checker. Write tests for **every** row of spec §18.4 (duplicate assignment, capacity, invalid vehicle, hard TW, shift exceeded, disconnected route, invalid depot sequence). Completed-stop reassignment waits for Phase 5
 - [x] `solvers/baseline.py`: Solomon (1987) time-oriented nearest neighbour (S0); distance-only NN stranded customers on R1/RC1
 - [x] `solvers/clarke_wright.py`: directional savings with O(1) merge checks for time windows and capacity, multi-depot clustering, real-vehicle assignment, insertion repair (S1). 56/56 feasible, median gap 20.0%
-- [ ] `solvers/ortools/`: full mapping from ARCHITECTURE §5, CW warm start, GLS, time limit, seed (S2)
+- [x] `solvers/ortools_gls.py`: full mapping from ARCHITECTURE §5, CW warm start, GLS, time limit (S2). OR-Tools has no seed, so time-limited runs are only reproducible on the same machine
 - [x] `benchmarks/`: Solomon loader for all 56 instances, using DIMACS distances so the published C101 best-known solution validates and scores exactly. Checksum-pinned download (`make fetch-solomon`), best-known distances in `solomon_manifest.csv`, and a runner that writes CSV with the gap (`make bench`)
 - [x] CLI: `optiroute solve | bench | fetch-solomon | schema`
 
 **Baseline (S0, `experiments/reports/solomon-20261119-194312.csv`):** 56/56 feasible; gap to best-known distance is 0.00% best, 69.2% median, 69.7% mean.
+
+**M1 met (2026-11-19):** S0/S1/S2 all 56/56 validator-clean. Median gap: S0 69.2%, S1 20.0%, S2 2.1% (10 s). See `experiments/reports/m1-solomon.md`.
 
 **Exit (M1):** S0–S2 return validator-clean solutions on all Solomon 100-customer C1/R1/RC1 instances. Benchmark runs are reproducible with a fixed seed. Gap to best-known solutions is reported.
 

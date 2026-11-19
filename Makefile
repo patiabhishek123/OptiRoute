@@ -24,8 +24,9 @@ fetch-solomon:  ## Download + verify the 56 Solomon instances into services/opti
 	cd $(OPTIMIZER) && uv run optiroute fetch-solomon
 
 ALGOS ?= S0
-bench:  ## Run Solomon benchmarks (ALGOS="S0 S1"), CSV into experiments/reports
-	cd $(OPTIMIZER) && uv run optiroute bench $(foreach a,$(ALGOS),-a $(a)) \
+TIME_LIMIT ?= 15
+bench:  ## Run Solomon benchmarks (ALGOS="S0 S1 S2" TIME_LIMIT=10), CSV into experiments/reports
+	cd $(OPTIMIZER) && uv run optiroute bench $(foreach a,$(ALGOS),-a $(a)) --time-limit $(TIME_LIMIT) \
 		--csv ../../experiments/reports/solomon-$(shell date +%Y%m%d-%H%M%S).csv
 
 up:  ## Start Postgres+PostGIS and Redis
