@@ -83,8 +83,8 @@ type OperationsGpsEvent struct {
 	VehicleID      uuid.UUID
 	RouteID        *uuid.UUID
 	Location       interface{}
-	SpeedKmh       pgtype.Numeric
-	Heading        pgtype.Numeric
+	SpeedKmh       *float64
+	Heading        *float64
 	RecordedAt     time.Time
 }
 
@@ -98,8 +98,8 @@ type OperationsOrder struct {
 	CustomerName           string
 	CustomerPhone          *string
 	DeliveryLocation       interface{}
-	DemandWeightKg         pgtype.Numeric
-	DemandVolumeM3         pgtype.Numeric
+	DemandWeightKg         float64
+	DemandVolumeM3         float64
 	TimeWindowStart        time.Time
 	TimeWindowEnd          time.Time
 	ServiceDurationMinutes int32
@@ -114,10 +114,10 @@ type OperationsVehicle struct {
 	DepotID            uuid.UUID
 	RegistrationNumber string
 	VehicleType        string
-	CapacityWeightKg   pgtype.Numeric
-	CapacityVolumeM3   pgtype.Numeric
-	CostPerKm          pgtype.Numeric
-	FixedCost          pgtype.Numeric
+	CapacityWeightKg   float64
+	CapacityVolumeM3   float64
+	CostPerKm          float64
+	FixedCost          float64
 	Status             string
 	CreatedAt          time.Time
 }
@@ -134,8 +134,8 @@ type OptimizationJob struct {
 	SolverConfig      []byte
 	SolverName        *string
 	SolverVersion     *string
-	ObjectiveValue    pgtype.Numeric
-	TotalDistanceKm   pgtype.Numeric
+	ObjectiveValue    *float64
+	TotalDistanceKm   *float64
 	ExecutionTimeMs   *int32
 	Result            []byte
 	ErrorMessage      *string
@@ -162,7 +162,7 @@ type RoutingRoute struct {
 	VehicleID                uuid.UUID
 	DriverID                 *uuid.UUID
 	Status                   string
-	TotalDistanceKm          pgtype.Numeric
+	TotalDistanceKm          float64
 	EstimatedDurationMinutes int32
 	CreatedAt                time.Time
 }
@@ -174,8 +174,8 @@ type RoutingRoutePlan struct {
 	PlanningDate      pgtype.Date
 	Version           int32
 	Status            string
-	TotalDistanceKm   pgtype.Numeric
-	TotalCost         pgtype.Numeric
+	TotalDistanceKm   float64
+	TotalCost         float64
 	CreatedAt         time.Time
 	ApprovedBy        *uuid.UUID
 	ApprovedAt        *time.Time

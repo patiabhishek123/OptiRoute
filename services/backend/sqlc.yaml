@@ -28,6 +28,13 @@ sql:
             go_type:
               type: time.Time
               pointer: true
+          - db_type: pg_catalog.numeric
+            go_type: float64
+          - db_type: pg_catalog.numeric
+            nullable: true
+            go_type:
+              type: float64
+              pointer: true
   - engine: postgresql
     schema: migrations
     queries: internal/geography/queries.sql
@@ -35,3 +42,10 @@ sql:
       go:
         <<: *go
         out: internal/geography/store
+  - engine: postgresql
+    schema: migrations
+    queries: internal/fleet/queries.sql
+    gen:
+      go:
+        <<: *go
+        out: internal/fleet/store
