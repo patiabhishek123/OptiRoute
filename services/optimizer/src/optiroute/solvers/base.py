@@ -16,7 +16,7 @@ class SolveParams:
 class SolverRun:
     solution: Solution
     iterations: int | None = None
-    hit_time_limit: bool = False
+    hit_time_limit: bool = False  # stopped by the time limit before finding any solution
     proven_optimal: bool = False  # never claimed by heuristics (spec §10.6)
 
 

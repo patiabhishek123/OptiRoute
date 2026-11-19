@@ -51,7 +51,7 @@ def test_reoptimize_and_unimplemented_algorithms_fail_fast():
     with pytest.raises(UnsupportedRequestError):
         solve_request(request(kind="REOPTIMIZE"), HaversineMatrixProvider())
     with pytest.raises(NotImplementedError):
-        solve_request(request(), HaversineMatrixProvider(), algorithm="ORTOOLS_GLS")
+        solve_request(request(), HaversineMatrixProvider(), algorithm="HYBRID_GLS")
 
 
 def test_haversine_distance_is_sane():

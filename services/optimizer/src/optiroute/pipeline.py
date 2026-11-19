@@ -45,6 +45,8 @@ def solve_request(
 
 
 def status_for(run: SolverRun, violations: list[Violation]) -> v1.Status:
+    if run.hit_time_limit and not run.solution.routes:
+        return v1.Status.TIME_LIMIT  # no plan at all within the limit
     if not violations:
         return v1.Status.FEASIBLE
     if all(v.code is Code.UNSERVED_NOT_ALLOWED for v in violations):
