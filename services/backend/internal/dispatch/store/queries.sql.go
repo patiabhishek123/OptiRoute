@@ -13,6 +13,72 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const activatePlan = `-- name: ActivatePlan :exec
+UPDATE routing.route_plans SET status = 'ACTIVE', activated_at = now() WHERE id = $1
+`
+
+func (q *Queries) ActivatePlan(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, activatePlan, id)
+	return err
+}
+
+const activePlanForDay = `-- name: ActivePlanForDay :one
+SELECT id FROM routing.route_plans
+WHERE organization_id = $1 AND planning_date = $2 AND status = 'ACTIVE'
+FOR UPDATE
+`
+
+type ActivePlanForDayParams struct {
+	OrganizationID uuid.UUID
+	PlanningDate   pgtype.Date
+}
+
+func (q *Queries) ActivePlanForDay(ctx context.Context, arg ActivePlanForDayParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, activePlanForDay, arg.OrganizationID, arg.PlanningDate)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
+const approvePlan = `-- name: ApprovePlan :exec
+UPDATE routing.route_plans SET status = 'APPROVED', approved_by = $1, approved_at = now()
+WHERE id = $2
+`
+
+type ApprovePlanParams struct {
+	ApprovedBy *uuid.UUID
+	ID         uuid.UUID
+}
+
+func (q *Queries) ApprovePlan(ctx context.Context, arg ApprovePlanParams) error {
+	_, err := q.db.Exec(ctx, approvePlan, arg.ApprovedBy, arg.ID)
+	return err
+}
+
+const deleteAssignmentsForPlan = `-- name: DeleteAssignmentsForPlan :many
+DELETE FROM routing.order_assignments WHERE route_plan_id = $1 RETURNING order_id
+`
+
+func (q *Queries) DeleteAssignmentsForPlan(ctx context.Context, routePlanID uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, deleteAssignmentsForPlan, routePlanID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []uuid.UUID
+	for rows.Next() {
+		var order_id uuid.UUID
+		if err := rows.Scan(&order_id); err != nil {
+			return nil, err
+		}
+		items = append(items, order_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getJobForPlan = `-- name: GetJobForPlan :one
 SELECT organization_id, status, planning_date, coalesce(input_snapshot->>'timezone', '')::text AS timezone, result
 FROM optimization.jobs WHERE id = $1
@@ -134,6 +200,21 @@ func (q *Queries) GetRoute(ctx context.Context, arg GetRouteParams) (GetRouteRow
 	return i, err
 }
 
+const insertAssignmentsForPlan = `-- name: InsertAssignmentsForPlan :execrows
+INSERT INTO routing.order_assignments (order_id, organization_id, route_id, route_plan_id)
+SELECT s.order_id, s.organization_id, s.route_id, r.route_plan_id
+FROM routing.route_stops s JOIN routing.routes r ON r.id = s.route_id
+WHERE r.route_plan_id = $1
+`
+
+func (q *Queries) InsertAssignmentsForPlan(ctx context.Context, routePlanID uuid.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, insertAssignmentsForPlan, routePlanID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const insertPlan = `-- name: InsertPlan :one
 INSERT INTO routing.route_plans (organization_id, optimization_job_id, planning_date, version, status,
     total_distance_km, total_cost, algorithm, objective, unassigned_order_ids)
@@ -170,6 +251,15 @@ func (q *Queries) InsertPlan(ctx context.Context, arg InsertPlanParams) (uuid.UU
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err
+}
+
+const insertPlanEvent = `-- name: InsertPlanEvent :exec
+INSERT INTO core.outbox (topic, payload) VALUES ('opti:plan-events', $1)
+`
+
+func (q *Queries) InsertPlanEvent(ctx context.Context, payload []byte) error {
+	_, err := q.db.Exec(ctx, insertPlanEvent, payload)
+	return err
 }
 
 const insertRoute = `-- name: InsertRoute :one
@@ -490,6 +580,32 @@ func (q *Queries) ListStopsForRoute(ctx context.Context, arg ListStopsForRoutePa
 	return items, nil
 }
 
+const lockPlan = `-- name: LockPlan :one
+
+SELECT id, status, planning_date FROM routing.route_plans
+WHERE organization_id = $1 AND id = $2
+FOR UPDATE
+`
+
+type LockPlanParams struct {
+	OrganizationID uuid.UUID
+	ID             uuid.UUID
+}
+
+type LockPlanRow struct {
+	ID           uuid.UUID
+	Status       string
+	PlanningDate pgtype.Date
+}
+
+// ---------------------------------------------------------------- lifecycle
+func (q *Queries) LockPlan(ctx context.Context, arg LockPlanParams) (LockPlanRow, error) {
+	row := q.db.QueryRow(ctx, lockPlan, arg.OrganizationID, arg.ID)
+	var i LockPlanRow
+	err := row.Scan(&i.ID, &i.Status, &i.PlanningDate)
+	return i, err
+}
+
 const lockPlanningDay = `-- name: LockPlanningDay :exec
 
 SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))
@@ -500,6 +616,19 @@ SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))
 func (q *Queries) LockPlanningDay(ctx context.Context, lockKey string) error {
 	_, err := q.db.Exec(ctx, lockPlanningDay, lockKey)
 	return err
+}
+
+const markPlanOrdersPlanned = `-- name: MarkPlanOrdersPlanned :execrows
+UPDATE operations.orders SET status = 'PLANNED'
+WHERE id IN (SELECT order_id FROM routing.order_assignments WHERE route_plan_id = $1)
+`
+
+func (q *Queries) MarkPlanOrdersPlanned(ctx context.Context, routePlanID uuid.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, markPlanOrdersPlanned, routePlanID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const nextPlanVersion = `-- name: NextPlanVersion :one
@@ -517,4 +646,112 @@ func (q *Queries) NextPlanVersion(ctx context.Context, arg NextPlanVersionParams
 	var version int32
 	err := row.Scan(&version)
 	return version, err
+}
+
+const planHasStarted = `-- name: PlanHasStarted :one
+SELECT EXISTS (
+    SELECT 1 FROM routing.routes r
+    LEFT JOIN routing.route_stops s ON s.route_id = r.id
+    WHERE r.route_plan_id = $1 AND (r.status <> 'PLANNED' OR s.stop_status <> 'PENDING')
+)::boolean AS started
+`
+
+// True once any route or stop of the plan has moved past its planned state (tracking, Phase 5).
+func (q *Queries) PlanHasStarted(ctx context.Context, routePlanID uuid.UUID) (bool, error) {
+	row := q.db.QueryRow(ctx, planHasStarted, routePlanID)
+	var started bool
+	err := row.Scan(&started)
+	return started, err
+}
+
+const rejectPlan = `-- name: RejectPlan :exec
+UPDATE routing.route_plans SET status = 'REJECTED' WHERE id = $1
+`
+
+func (q *Queries) RejectPlan(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, rejectPlan, id)
+	return err
+}
+
+const revertUnassignedOrders = `-- name: RevertUnassignedOrders :many
+UPDATE operations.orders o SET status = 'PENDING'
+WHERE o.id = ANY($1::uuid[]) AND o.status = 'PLANNED'
+  AND NOT EXISTS (SELECT 1 FROM routing.order_assignments a WHERE a.order_id = o.id)
+RETURNING o.id
+`
+
+// Orders of a superseded plan that the new plan does not cover go back to PENDING.
+func (q *Queries) RevertUnassignedOrders(ctx context.Context, orderIds []uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, revertUnassignedOrders, orderIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const staleOrders = `-- name: StaleOrders :many
+SELECT o.id, o.external_order_id, o.status
+FROM routing.route_stops s
+JOIN routing.routes r ON r.id = s.route_id
+JOIN operations.orders o ON o.id = s.order_id
+WHERE r.route_plan_id = $1
+  AND NOT (o.status = 'PENDING'
+       OR (o.status = 'PLANNED' AND EXISTS (
+            SELECT 1 FROM routing.order_assignments a
+            WHERE a.order_id = o.id AND a.route_plan_id = $2::uuid)))
+ORDER BY o.external_order_id
+`
+
+type StaleOrdersParams struct {
+	RoutePlanID    uuid.UUID
+	ReplacedPlanID *uuid.UUID
+}
+
+type StaleOrdersRow struct {
+	ID              uuid.UUID
+	ExternalOrderID string
+	Status          string
+}
+
+// Orders in the plan that can no longer be planned: anything not PENDING, except orders that are
+// PLANNED on the plan being replaced.
+func (q *Queries) StaleOrders(ctx context.Context, arg StaleOrdersParams) ([]StaleOrdersRow, error) {
+	rows, err := q.db.Query(ctx, staleOrders, arg.RoutePlanID, arg.ReplacedPlanID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []StaleOrdersRow
+	for rows.Next() {
+		var i StaleOrdersRow
+		if err := rows.Scan(&i.ID, &i.ExternalOrderID, &i.Status); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const supersedePlan = `-- name: SupersedePlan :exec
+UPDATE routing.route_plans SET status = 'SUPERSEDED' WHERE id = $1
+`
+
+func (q *Queries) SupersedePlan(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, supersedePlan, id)
+	return err
 }

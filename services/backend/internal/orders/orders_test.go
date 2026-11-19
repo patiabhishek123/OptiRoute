@@ -244,6 +244,10 @@ func TestOrderLifecycle(t *testing.T) {
 	if code := e.json("POST", "/api/v1/orders/"+d.ID.String()+"/cancel", "a", nil, nil); code != 409 {
 		t.Errorf("cancel dispatched = %d, want 409", code)
 	}
+	_, _ = e.pool.Exec(context.Background(), "UPDATE operations.orders SET status='PLANNED' WHERE id=$1", d.ID)
+	if code := e.json("POST", "/api/v1/orders/"+d.ID.String()+"/cancel", "a", nil, nil); code != 409 {
+		t.Errorf("cancel planned = %d, want 409 (it is a stop on the active plan)", code)
+	}
 	if code := e.json("POST", "/api/v1/orders/"+uuid.NewString()+"/cancel", "a", nil, nil); code != 404 {
 		t.Errorf("cancel unknown = %d, want 404", code)
 	}

@@ -70,7 +70,7 @@ RETURNING id;
 
 -- name: CancelOrder :one
 UPDATE operations.orders SET status = 'CANCELLED'
-WHERE organization_id = @organization_id AND id = @id AND status IN ('PENDING', 'PLANNED')
+WHERE organization_id = @organization_id AND id = @id AND status = 'PENDING'
 RETURNING id;
 
 -- name: OrderStatus :one

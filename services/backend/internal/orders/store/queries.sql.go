@@ -15,7 +15,7 @@ import (
 
 const cancelOrder = `-- name: CancelOrder :one
 UPDATE operations.orders SET status = 'CANCELLED'
-WHERE organization_id = $1 AND id = $2 AND status IN ('PENDING', 'PLANNED')
+WHERE organization_id = $1 AND id = $2 AND status = 'PENDING'
 RETURNING id
 `
 
