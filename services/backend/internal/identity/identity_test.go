@@ -12,6 +12,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/identity"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/auth"
@@ -55,7 +56,8 @@ func newServer(t *testing.T) client {
 	}
 	mux := http.NewServeMux()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	identity.NewHandler(identity.NewService(pool, tokens, time.Hour), log, true).
+	svc := identity.NewService(pool, tokens, time.Hour).WithBcryptCost(bcrypt.MinCost)
+	identity.NewHandler(svc, log, true).
 		Routes(mux, func(h http.Handler) http.Handler { return auth.Authenticate(tokens, h) })
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)

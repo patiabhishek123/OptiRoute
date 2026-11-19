@@ -21,7 +21,8 @@ import (
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/httpx"
 )
 
-const bcryptCost = 12
+// DefaultBcryptCost is used in production; tests lower it with WithBcryptCost.
+const DefaultBcryptCost = 12
 
 var (
 	errInvalidCredentials = httpx.Unauthorized("invalid organization, email or password")
@@ -34,12 +35,19 @@ type Service struct {
 	pool       *pgxpool.Pool
 	tokens     *Tokens
 	refreshTTL time.Duration
+	bcryptCost int
 	dummyHash  []byte // compared against when the user does not exist (constant-ish timing)
 }
 
 func NewService(pool *pgxpool.Pool, tokens *Tokens, refreshTTL time.Duration) *Service {
-	dummy, _ := bcrypt.GenerateFromPassword([]byte("not-a-real-password"), bcryptCost)
-	return &Service{pool: pool, tokens: tokens, refreshTTL: refreshTTL, dummyHash: dummy}
+	return (&Service{pool: pool, tokens: tokens, refreshTTL: refreshTTL}).WithBcryptCost(DefaultBcryptCost)
+}
+
+// WithBcryptCost sets the password hashing cost (tests use bcrypt.MinCost to stay fast).
+func (s *Service) WithBcryptCost(cost int) *Service {
+	s.bcryptCost = cost
+	s.dummyHash, _ = bcrypt.GenerateFromPassword([]byte("not-a-real-password"), cost)
+	return s
 }
 
 type TokenPair struct {
@@ -246,7 +254,7 @@ func (s *Service) credentials(rawEmail, password string, problems map[string]str
 	if len(problems) > 0 {
 		return "", nil, httpx.Unprocessable("VALIDATION_FAILED", "invalid input", problems)
 	}
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcryptCost)
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), s.bcryptCost)
 	return email, hash, err
 }
 
