@@ -14,6 +14,7 @@ import (
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/geography"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/identity"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/orders"
+	"github.com/patiabhishek123/OptiRoute/services/backend/internal/planning"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/auth"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/httpx"
 )
@@ -43,6 +44,7 @@ func New(d Deps) (http.Handler, error) {
 	geography.NewHandler(depots, d.Log).Routes(mux, authn)
 	fleet.NewHandler(d.DB, d.Log).Routes(mux, authn)
 	orders.NewHandler(d.DB, depots, d.Log).Routes(mux, authn)
+	planning.NewHandler(d.DB, d.Log).Routes(mux, authn)
 
 	// Liveness: the process is serving. Readiness: its dependencies answer.
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
