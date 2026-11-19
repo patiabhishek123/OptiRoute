@@ -1,0 +1,2 @@
+# Benchmark fixtures are checksum-pinned; never normalise line endings.
+services/optimizer/tests/fixtures/** -text

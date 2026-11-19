@@ -1,0 +1,27 @@
+{
+  "contract_version": "1.0",
+  "job_id": "job-example-1",
+  "kind": "SOLVE",
+  "planning_date": "2026-11-02",
+  "timezone": "Europe/Berlin",
+  "objective": { "profile": "COST_BALANCED" },
+  "solver": { "algorithm": "NEAREST_NEIGHBOUR", "time_limit_s": 5, "allow_unassigned": true, "seed": 1, "time_windows": "HARD" },
+  "depots": [
+    { "id": "north", "lat": 52.5200, "lon": 13.4050 },
+    { "id": "south", "lat": 52.4500, "lon": 13.3500 }
+  ],
+  "vehicles": [
+    { "id": "van-1", "driver_id": "drv-1", "start_depot_id": "north", "cap_weight_g": 500000, "cap_volume_cm3": 4000000,
+      "cost_per_km": 0.45, "fixed_cost": 40, "shift_start_s": 28800, "shift_end_s": 61200, "max_overtime_s": 3600, "break_s": 1800 },
+    { "id": "van-2", "driver_id": "drv-2", "start_depot_id": "south", "cap_weight_g": 300000, "cap_volume_cm3": 2500000,
+      "cost_per_km": 0.35, "fixed_cost": 30, "shift_start_s": 28800, "shift_end_s": 61200 }
+  ],
+  "orders": [
+    { "id": "o-1", "lat": 52.5310, "lon": 13.3840, "weight_g": 12000, "volume_cm3": 40000, "tw_start_s": 32400, "tw_end_s": 43200, "service_s": 300 },
+    { "id": "o-2", "lat": 52.5120, "lon": 13.4300, "weight_g": 8000, "volume_cm3": 25000, "tw_start_s": 28800, "tw_end_s": 39600, "service_s": 300 },
+    { "id": "o-3", "lat": 52.5450, "lon": 13.4200, "weight_g": 20000, "volume_cm3": 90000, "tw_start_s": 36000, "tw_end_s": 50400, "service_s": 600, "priority": 2 },
+    { "id": "o-4", "depot_id": "south", "lat": 52.4600, "lon": 13.3200, "weight_g": 15000, "volume_cm3": 60000, "tw_start_s": 32400, "tw_end_s": 46800, "service_s": 300 },
+    { "id": "o-5", "depot_id": "south", "lat": 52.4400, "lon": 13.3700, "weight_g": 5000, "volume_cm3": 15000, "tw_start_s": 43200, "tw_end_s": 57600, "service_s": 300 },
+    { "id": "o-6", "lat": 52.4800, "lon": 13.3900, "weight_g": 30000, "volume_cm3": 120000, "tw_start_s": 39600, "tw_end_s": 54000, "service_s": 900 }
+  ]
+}

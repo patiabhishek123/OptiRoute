@@ -1,0 +1,417 @@
+{
+  "$defs": {
+    "Kpis": {
+      "additionalProperties": false,
+      "properties": {
+        "distance_m": {
+          "title": "Distance M",
+          "type": "integer"
+        },
+        "duration_s": {
+          "title": "Duration S",
+          "type": "integer"
+        },
+        "late_stops": {
+          "title": "Late Stops",
+          "type": "integer"
+        },
+        "vehicles_used": {
+          "title": "Vehicles Used",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "distance_m",
+        "duration_s",
+        "vehicles_used",
+        "late_stops"
+      ],
+      "title": "Kpis",
+      "type": "object"
+    },
+    "Meta": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "title": "Algorithm",
+          "type": "string"
+        },
+        "execution_ms": {
+          "title": "Execution Ms",
+          "type": "integer"
+        },
+        "git_sha": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Git Sha"
+        },
+        "iterations": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Iterations"
+        },
+        "matrix_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Matrix Key"
+        },
+        "matrix_source": {
+          "title": "Matrix Source",
+          "type": "string"
+        },
+        "recommend_publish": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Recommend Publish"
+        },
+        "seed": {
+          "title": "Seed",
+          "type": "integer"
+        },
+        "solver_version": {
+          "title": "Solver Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "algorithm",
+        "solver_version",
+        "git_sha",
+        "seed",
+        "iterations",
+        "matrix_source",
+        "matrix_key",
+        "execution_ms"
+      ],
+      "title": "Meta",
+      "type": "object"
+    },
+    "ObjectiveBreakdown": {
+      "additionalProperties": false,
+      "properties": {
+        "fleet": {
+          "title": "Fleet",
+          "type": "number"
+        },
+        "lateness": {
+          "title": "Lateness",
+          "type": "number"
+        },
+        "overtime": {
+          "title": "Overtime",
+          "type": "number"
+        },
+        "stability": {
+          "title": "Stability",
+          "type": "number"
+        },
+        "total": {
+          "title": "Total",
+          "type": "number"
+        },
+        "travel": {
+          "title": "Travel",
+          "type": "number"
+        },
+        "unserved": {
+          "title": "Unserved",
+          "type": "number"
+        }
+      },
+      "required": [
+        "total",
+        "travel",
+        "lateness",
+        "fleet",
+        "overtime",
+        "unserved",
+        "stability"
+      ],
+      "title": "ObjectiveBreakdown",
+      "type": "object"
+    },
+    "ResultRoute": {
+      "additionalProperties": false,
+      "properties": {
+        "distance_m": {
+          "title": "Distance M",
+          "type": "integer"
+        },
+        "driver_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Driver Id"
+        },
+        "duration_s": {
+          "title": "Duration S",
+          "type": "integer"
+        },
+        "stops": {
+          "items": {
+            "$ref": "#/$defs/Stop"
+          },
+          "title": "Stops",
+          "type": "array"
+        },
+        "vehicle_id": {
+          "title": "Vehicle Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "vehicle_id",
+        "driver_id",
+        "distance_m",
+        "duration_s",
+        "stops"
+      ],
+      "title": "ResultRoute",
+      "type": "object"
+    },
+    "Status": {
+      "enum": [
+        "FEASIBLE",
+        "INFEASIBLE",
+        "TIME_LIMIT",
+        "FAILED"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "Stop": {
+      "additionalProperties": false,
+      "properties": {
+        "arrival_s": {
+          "title": "Arrival S",
+          "type": "integer"
+        },
+        "departure_s": {
+          "title": "Departure S",
+          "type": "integer"
+        },
+        "late_s": {
+          "title": "Late S",
+          "type": "integer"
+        },
+        "order_id": {
+          "title": "Order Id",
+          "type": "string"
+        },
+        "seq": {
+          "minimum": 1,
+          "title": "Seq",
+          "type": "integer"
+        },
+        "service_start_s": {
+          "title": "Service Start S",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "order_id",
+        "seq",
+        "arrival_s",
+        "service_start_s",
+        "departure_s",
+        "late_s"
+      ],
+      "title": "Stop",
+      "type": "object"
+    },
+    "Unassigned": {
+      "additionalProperties": false,
+      "properties": {
+        "order_id": {
+          "title": "Order Id",
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/$defs/UnassignedReason"
+        }
+      },
+      "required": [
+        "order_id",
+        "reason"
+      ],
+      "title": "Unassigned",
+      "type": "object"
+    },
+    "UnassignedReason": {
+      "enum": [
+        "NO_ELIGIBLE_VEHICLE",
+        "NOT_ROUTED"
+      ],
+      "title": "UnassignedReason",
+      "type": "string"
+    },
+    "Validation": {
+      "additionalProperties": false,
+      "properties": {
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "violations": {
+          "items": {
+            "$ref": "#/$defs/ViolationOut"
+          },
+          "title": "Violations",
+          "type": "array"
+        }
+      },
+      "required": [
+        "passed",
+        "violations"
+      ],
+      "title": "Validation",
+      "type": "object"
+    },
+    "ViolationOut": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "order_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Order Id"
+        },
+        "vehicle_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Vehicle Id"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "title": "ViolationOut",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "contract_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Contract Version",
+      "type": "string"
+    },
+    "job_id": {
+      "title": "Job Id",
+      "type": "string"
+    },
+    "kpis": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Kpis"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "meta": {
+      "$ref": "#/$defs/Meta"
+    },
+    "objective": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ObjectiveBreakdown"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "proven_optimal": {
+      "default": false,
+      "title": "Proven Optimal",
+      "type": "boolean"
+    },
+    "routes": {
+      "items": {
+        "$ref": "#/$defs/ResultRoute"
+      },
+      "title": "Routes",
+      "type": "array"
+    },
+    "status": {
+      "$ref": "#/$defs/Status"
+    },
+    "unassigned": {
+      "items": {
+        "$ref": "#/$defs/Unassigned"
+      },
+      "title": "Unassigned",
+      "type": "array"
+    },
+    "validation": {
+      "$ref": "#/$defs/Validation"
+    }
+  },
+  "required": [
+    "job_id",
+    "status",
+    "objective",
+    "kpis",
+    "routes",
+    "unassigned",
+    "validation",
+    "meta"
+  ],
+  "title": "SolveResult",
+  "type": "object"
+}

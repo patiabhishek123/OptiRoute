@@ -1,0 +1,398 @@
+{
+  "$defs": {
+    "Algorithm": {
+      "enum": [
+        "NEAREST_NEIGHBOUR",
+        "CLARKE_WRIGHT",
+        "ORTOOLS_GLS",
+        "HYBRID_GLS"
+      ],
+      "title": "Algorithm",
+      "type": "string"
+    },
+    "Depot": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "lat": {
+          "maximum": 90,
+          "minimum": -90,
+          "title": "Lat",
+          "type": "number"
+        },
+        "lon": {
+          "maximum": 180,
+          "minimum": -180,
+          "title": "Lon",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "lat",
+        "lon"
+      ],
+      "title": "Depot",
+      "type": "object"
+    },
+    "JobKind": {
+      "enum": [
+        "SOLVE",
+        "REOPTIMIZE"
+      ],
+      "title": "JobKind",
+      "type": "string"
+    },
+    "Objective": {
+      "additionalProperties": false,
+      "properties": {
+        "profile": {
+          "default": "COST_BALANCED",
+          "title": "Profile",
+          "type": "string"
+        },
+        "weights": {
+          "$ref": "#/$defs/Weights",
+          "default": {
+            "lateness_per_min": 50.0,
+            "overtime_per_min": 20.0,
+            "reassign": 500.0,
+            "reorder": 100.0,
+            "unserved": 1000000.0
+          }
+        }
+      },
+      "title": "Objective",
+      "type": "object"
+    },
+    "Order": {
+      "additionalProperties": false,
+      "properties": {
+        "depot_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Depot Id"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "lat": {
+          "maximum": 90,
+          "minimum": -90,
+          "title": "Lat",
+          "type": "number"
+        },
+        "lon": {
+          "maximum": 180,
+          "minimum": -180,
+          "title": "Lon",
+          "type": "number"
+        },
+        "priority": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Priority",
+          "type": "integer"
+        },
+        "service_s": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Service S",
+          "type": "integer"
+        },
+        "tw_end_s": {
+          "minimum": 0,
+          "title": "Tw End S",
+          "type": "integer"
+        },
+        "tw_start_s": {
+          "minimum": 0,
+          "title": "Tw Start S",
+          "type": "integer"
+        },
+        "volume_cm3": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Volume Cm3",
+          "type": "integer"
+        },
+        "weight_g": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Weight G",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "lat",
+        "lon",
+        "tw_start_s",
+        "tw_end_s"
+      ],
+      "title": "Order",
+      "type": "object"
+    },
+    "SolverConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "$ref": "#/$defs/Algorithm",
+          "default": "HYBRID_GLS"
+        },
+        "allow_unassigned": {
+          "default": true,
+          "title": "Allow Unassigned",
+          "type": "boolean"
+        },
+        "seed": {
+          "default": 0,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "time_limit_s": {
+          "default": 15,
+          "maximum": 3600,
+          "minimum": 1,
+          "title": "Time Limit S",
+          "type": "integer"
+        },
+        "time_windows": {
+          "$ref": "#/$defs/TimeWindows",
+          "default": "SOFT"
+        }
+      },
+      "title": "SolverConfig",
+      "type": "object"
+    },
+    "TimeWindows": {
+      "enum": [
+        "HARD",
+        "SOFT"
+      ],
+      "title": "TimeWindows",
+      "type": "string"
+    },
+    "Vehicle": {
+      "additionalProperties": false,
+      "properties": {
+        "break_s": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Break S",
+          "type": "integer"
+        },
+        "cap_volume_cm3": {
+          "minimum": 0,
+          "title": "Cap Volume Cm3",
+          "type": "integer"
+        },
+        "cap_weight_g": {
+          "minimum": 0,
+          "title": "Cap Weight G",
+          "type": "integer"
+        },
+        "cost_per_km": {
+          "minimum": 0,
+          "title": "Cost Per Km",
+          "type": "number"
+        },
+        "driver_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Driver Id"
+        },
+        "end_depot_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Depot Id"
+        },
+        "fixed_cost": {
+          "default": 0.0,
+          "minimum": 0,
+          "title": "Fixed Cost",
+          "type": "number"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "max_overtime_s": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Max Overtime S",
+          "type": "integer"
+        },
+        "shift_end_s": {
+          "minimum": 0,
+          "title": "Shift End S",
+          "type": "integer"
+        },
+        "shift_start_s": {
+          "minimum": 0,
+          "title": "Shift Start S",
+          "type": "integer"
+        },
+        "start_depot_id": {
+          "title": "Start Depot Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "start_depot_id",
+        "cap_weight_g",
+        "cap_volume_cm3",
+        "cost_per_km",
+        "shift_start_s",
+        "shift_end_s"
+      ],
+      "title": "Vehicle",
+      "type": "object"
+    },
+    "Weights": {
+      "additionalProperties": false,
+      "properties": {
+        "lateness_per_min": {
+          "default": 50.0,
+          "minimum": 0,
+          "title": "Lateness Per Min",
+          "type": "number"
+        },
+        "overtime_per_min": {
+          "default": 20.0,
+          "minimum": 0,
+          "title": "Overtime Per Min",
+          "type": "number"
+        },
+        "reassign": {
+          "default": 500.0,
+          "minimum": 0,
+          "title": "Reassign",
+          "type": "number"
+        },
+        "reorder": {
+          "default": 100.0,
+          "minimum": 0,
+          "title": "Reorder",
+          "type": "number"
+        },
+        "unserved": {
+          "default": 1000000.0,
+          "minimum": 0,
+          "title": "Unserved",
+          "type": "number"
+        }
+      },
+      "title": "Weights",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "contract_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Contract Version",
+      "type": "string"
+    },
+    "depots": {
+      "items": {
+        "$ref": "#/$defs/Depot"
+      },
+      "minItems": 1,
+      "title": "Depots",
+      "type": "array"
+    },
+    "job_id": {
+      "title": "Job Id",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/JobKind",
+      "default": "SOLVE"
+    },
+    "objective": {
+      "$ref": "#/$defs/Objective",
+      "default": {
+        "profile": "COST_BALANCED",
+        "weights": {
+          "lateness_per_min": 50.0,
+          "overtime_per_min": 20.0,
+          "reassign": 500.0,
+          "reorder": 100.0,
+          "unserved": 1000000.0
+        }
+      }
+    },
+    "orders": {
+      "items": {
+        "$ref": "#/$defs/Order"
+      },
+      "title": "Orders",
+      "type": "array"
+    },
+    "planning_date": {
+      "format": "date",
+      "title": "Planning Date",
+      "type": "string"
+    },
+    "solver": {
+      "$ref": "#/$defs/SolverConfig",
+      "default": {
+        "algorithm": "HYBRID_GLS",
+        "allow_unassigned": true,
+        "seed": 0,
+        "time_limit_s": 15,
+        "time_windows": "SOFT"
+      }
+    },
+    "timezone": {
+      "title": "Timezone",
+      "type": "string"
+    },
+    "vehicles": {
+      "items": {
+        "$ref": "#/$defs/Vehicle"
+      },
+      "minItems": 1,
+      "title": "Vehicles",
+      "type": "array"
+    }
+  },
+  "required": [
+    "job_id",
+    "planning_date",
+    "timezone",
+    "depots",
+    "vehicles",
+    "orders"
+  ],
+  "title": "SolveRequest",
+  "type": "object"
+}
