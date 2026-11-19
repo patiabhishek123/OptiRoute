@@ -4,7 +4,7 @@ Cost-aware vehicle-routing and dispatch platform for regional logistics operator
 It solves a heterogeneous capacitated VRP with time windows (HCVRPTW) using heuristics + Google OR-Tools + custom local search,
 and supports dispatcher approval and dynamic re-optimization (new orders, breakdowns).
 
-**Status:** Phase 0 (scaffold) done. Next: Phase 1 in [docs/PLAN.md](docs/PLAN.md).
+**Status:** Phase 1 in progress: contract, evaluator, validator, S0 baseline and Solomon benchmarks are done; Clarke-Wright and OR-Tools are next. See [docs/PLAN.md](docs/PLAN.md).
 
 ## Quick start
 

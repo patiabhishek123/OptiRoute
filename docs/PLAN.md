@@ -21,15 +21,17 @@ Design references: [ARCHITECTURE.md](ARCHITECTURE.md). Full spec: `OptiRoute_Tec
 
 All work is in `services/optimizer/`. No HTTP, no database.
 
-- [ ] `contracts/`: pydantic `SolveRequest` / `SolveResult` (ARCHITECTURE §4); export JSON Schema to `packages/api-contracts/optimizer/v1/`
-- [ ] `matrices/`: `MatrixProvider` interface + `HaversineMatrixProvider`
-- [ ] `validation/evaluate.py`: shared cost breakdown (travel, lateness, fleet, overtime, unserved)
-- [ ] `validation/validate.py`: independent hard-constraint checker. Write tests for **every** row of spec §18.4 (duplicate assignment, capacity, invalid vehicle, hard TW, shift exceeded, disconnected route, invalid depot sequence)
-- [ ] `solvers/baseline/`: nearest neighbour (S0)
+- [x] `contracts/`: pydantic `SolveRequest` / `SolveResult` (ARCHITECTURE §4); export JSON Schema to `packages/api-contracts/optimizer/v1/`
+- [x] `matrices/`: `MatrixProvider` interface + `HaversineMatrixProvider`
+- [x] `validation/evaluate.py`: shared cost breakdown (travel, lateness, fleet, overtime, unserved)
+- [x] `validation/validate.py`: independent hard-constraint checker. Write tests for **every** row of spec §18.4 (duplicate assignment, capacity, invalid vehicle, hard TW, shift exceeded, disconnected route, invalid depot sequence). Completed-stop reassignment waits for Phase 5
+- [x] `solvers/baseline.py`: Solomon (1987) time-oriented nearest neighbour (S0); distance-only NN stranded customers on R1/RC1
 - [ ] `solvers/clarke_wright/`: savings with capacity and TW feasibility checks (S1)
 - [ ] `solvers/ortools/`: full mapping from ARCHITECTURE §5, CW warm start, GLS, time limit, seed (S2)
-- [ ] `benchmarks/`: Solomon loader (C1, R1, RC1 sets) + a runner that writes CSV (instance, algorithm, seed, Z, distance, vehicles, late, feasible, ms)
-- [ ] CLI: `optiroute solve problem.json --algorithm S2 --time-limit 15`
+- [x] `benchmarks/`: Solomon loader for all 56 instances, using DIMACS distances so the published C101 best-known solution validates and scores exactly. Checksum-pinned download (`make fetch-solomon`), best-known distances in `solomon_manifest.csv`, and a runner that writes CSV with the gap (`make bench`)
+- [x] CLI: `optiroute solve | bench | fetch-solomon | schema`
+
+**Baseline (S0, `experiments/reports/solomon-20261119-194312.csv`):** 56/56 feasible; gap to best-known distance is 0.00% best, 69.2% median, 69.7% mean.
 
 **Exit (M1):** S0–S2 return validator-clean solutions on all Solomon 100-customer C1/R1/RC1 instances. Benchmark runs are reproducible with a fixed seed. Gap to best-known solutions is reported.
 
