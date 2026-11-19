@@ -1,12 +1,15 @@
 """End-to-end solve: request → instance → solver → evaluate → validate → result.
 
-Shared by the CLI now and the Redis worker in Phase 2.
+Shared by the CLI and the Redis worker. ``on_stage`` is called on entering SOLVING and VALIDATING
+(preprocessing is the default first stage); the worker uses it to record job status and to
+abort cancelled jobs by raising.
 """
 
 from __future__ import annotations
 
 import os
 import time
+from collections.abc import Callable
 
 from optiroute import __version__
 from optiroute.contracts import v1
@@ -21,13 +24,19 @@ STRUCTURAL = {Code.UNKNOWN_VEHICLE, Code.UNKNOWN_NODE, Code.DEPOT_IN_ROUTE, Code
 
 
 def solve_request(
-    req: v1.SolveRequest, provider: MatrixProvider, algorithm: str | None = None
+    req: v1.SolveRequest,
+    provider: MatrixProvider,
+    algorithm: str | None = None,
+    on_stage: Callable[[str], None] | None = None,
 ) -> v1.SolveResult:
+    stage = on_stage or (lambda _: None)
     algorithm = algorithm or req.solver.algorithm.value
     solver = get_solver(algorithm)  # fail fast before building the matrix
     started = time.perf_counter()
     instance = build_instance(req, provider)
+    stage("SOLVING")
     run = solver(instance, SolveParams(req.solver.time_limit_s, req.solver.seed))
+    stage("VALIDATING")
     violations = validate(instance, run.solution)
     structural = any(v.code in STRUCTURAL for v in violations)
     evaluation = None if structural else evaluate(instance, run.solution)
@@ -40,6 +49,7 @@ def solve_request(
         violations,
         algorithm=algorithm,
         matrix_source=provider.source,
+        matrix_key=getattr(provider, "last_key", None),
         execution_ms=elapsed_ms,
     )
 
@@ -64,6 +74,7 @@ def to_result(
     algorithm: str,
     matrix_source: str,
     execution_ms: int,
+    matrix_key: str | None = None,
 ) -> v1.SolveResult:
     def vid(k: int | None) -> str | None:
         ok = k is not None and 0 <= k < len(instance.vehicles)
@@ -103,7 +114,7 @@ def to_result(
             seed=req.solver.seed,
             iterations=run.iterations,
             matrix_source=matrix_source,
-            matrix_key=None,
+            matrix_key=matrix_key,
             execution_ms=execution_ms,
         ),
     )
