@@ -98,3 +98,99 @@ export interface RowError {
   field: string;
   message: string;
 }
+
+export type JobStatus =
+  | "QUEUED" | "PREPROCESSING" | "SOLVING" | "VALIDATING"
+  | "COMPLETED" | "FAILED" | "CANCELLED" | "INFEASIBLE" | "TIME_LIMIT";
+
+export const ACTIVE_JOB: JobStatus[] = ["QUEUED", "PREPROCESSING", "SOLVING", "VALIDATING"];
+
+export type Algorithm = "NEAREST_NEIGHBOUR" | "CLARKE_WRIGHT" | "ORTOOLS_GLS";
+
+export interface Job {
+  id: string;
+  kind: string;
+  status: JobStatus;
+  planning_date: string;
+  algorithm: string;
+  order_count: number;
+  vehicle_count: number;
+  objective_value: number | null;
+  total_distance_km: number | null;
+  execution_time_ms: number | null;
+  error_message: string | null;
+  cancel_requested: boolean;
+  attempts: number;
+  created_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+}
+
+export type PlanStatus = "DRAFT" | "APPROVED" | "ACTIVE" | "REJECTED" | "SUPERSEDED";
+
+export interface Objective {
+  total: number;
+  travel: number;
+  lateness: number;
+  fleet: number;
+  overtime: number;
+  unserved: number;
+  stability: number;
+}
+
+export interface PlanSummary {
+  id: string;
+  optimization_job_id: string;
+  planning_date: string;
+  version: number;
+  status: PlanStatus;
+  algorithm: string;
+  total_distance_km: number;
+  total_cost: number;
+  objective: Objective;
+  unassigned_count: number;
+  route_count: number;
+  created_at: string;
+  approved_at: string | null;
+  activated_at: string | null;
+}
+
+export interface Stop {
+  id: string;
+  order_id: string;
+  external_order_id: string;
+  customer_name: string;
+  lat: number;
+  lon: number;
+  sequence: number;
+  planned_arrival: string;
+  planned_departure: string;
+  status: string;
+  time_window_start: string;
+  time_window_end: string;
+}
+
+export interface Route {
+  id: string;
+  route_plan_id: string;
+  vehicle_id: string;
+  registration_number: string;
+  driver_id: string | null;
+  driver_name: string | null;
+  status: string;
+  total_distance_km: number;
+  estimated_duration_minutes: number;
+  stops: Stop[];
+}
+
+export interface Plan extends PlanSummary {
+  approved_by: string | null;
+  unassigned_order_ids: string[];
+  routes: Route[];
+}
+
+export interface RouteLine {
+  route_id: string;
+  source: "OSRM" | "STRAIGHT";
+  coordinates: [number, number][];
+}
