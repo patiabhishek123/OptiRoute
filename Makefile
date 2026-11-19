@@ -1,6 +1,6 @@
 OPTIMIZER := services/optimizer
 
-.PHONY: help setup lint format test schemas fetch-solomon bench db-migrate worker up down logs
+.PHONY: help setup lint format test schemas fetch-solomon bench osrm-build osrm-up db-migrate worker up down logs
 
 help:  ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -29,6 +29,12 @@ bench:  ## Run Solomon benchmarks (ALGOS="S0 S1 S2" TIME_LIMIT=10), CSV into exp
 	cd $(OPTIMIZER) && uv run optiroute bench $(foreach a,$(ALGOS),-a $(a)) --time-limit $(TIME_LIMIT) \
 		--csv ../../experiments/reports/solomon-$(shell date +%Y%m%d-%H%M%S).csv
 
+osrm-build:  ## Download + clip Odisha and preprocess OSRM (memory/CPU capped)
+	services/routing/osrm/build.sh
+
+osrm-up:  ## Start the OSRM router (needs osrm-build)
+	docker compose --profile routing up -d --wait osrm
+
 db-migrate:  ## Apply backend migrations (goose Up sections) to the dev database
 	for f in services/backend/migrations/*.sql; do \
 		sed -n '/+goose Up/,/+goose Down/p' $$f | docker compose exec -T db \
@@ -41,8 +47,8 @@ worker:  ## Run the optimizer worker against local Postgres/Redis (and OSRM if u
 up:  ## Start Postgres+PostGIS and Redis
 	docker compose up -d --wait
 
-down:  ## Stop local infrastructure
-	docker compose down
+down:  ## Stop local infrastructure (including OSRM)
+	docker compose --profile routing down
 
 logs:  ## Tail infrastructure logs
 	docker compose logs -f
