@@ -32,10 +32,11 @@ type solveResult struct {
 		DistanceM int64   `json:"distance_m"`
 		DurationS int64   `json:"duration_s"`
 		Stops     []struct {
-			OrderID    string `json:"order_id"`
-			Seq        int32  `json:"seq"`
-			ArrivalS   int64  `json:"arrival_s"`
-			DepartureS int64  `json:"departure_s"`
+			OrderID       string `json:"order_id"`
+			Seq           int32  `json:"seq"`
+			ArrivalS      int64  `json:"arrival_s"`
+			ServiceStartS int64  `json:"service_start_s"`
+			DepartureS    int64  `json:"departure_s"`
 		} `json:"stops"`
 	} `json:"routes"`
 	Unassigned []struct {
@@ -134,9 +135,12 @@ func Materialize(ctx context.Context, pool *pgxpool.Pool, jobID uuid.UUID) (plan
 				if err != nil {
 					return fmt.Errorf("%w: order id %q", ErrMalformedResult, s.OrderID)
 				}
+				// The planned arrival is when service starts: a van that would reach the customer
+				// before the window opens waits beforehand, not on the doorstep, so drivers and
+				// customers never see an ETA before the window.
 				stops[i] = store.InsertStopsParams{
 					OrganizationID: org, RouteID: routeID, OrderID: order, SequenceNumber: s.Seq,
-					PlannedArrival: at(s.ArrivalS), PlannedDeparture: at(s.DepartureS),
+					PlannedArrival: at(max(s.ArrivalS, s.ServiceStartS)), PlannedDeparture: at(s.DepartureS),
 				}
 			}
 			if _, err := q.InsertStops(ctx, stops); err != nil {
