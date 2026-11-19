@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { api } from "../api/client";
 import { ACTIVE_JOB, type Algorithm, type Job, type Page, type PlanStatus, type PlanSummary } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
@@ -45,6 +45,10 @@ export function Plans() {
     },
   });
 
+  const navigate = useNavigate();
+  const [picked, setPicked] = useState<string[]>([]);
+  const toggle = (id: string) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p.slice(-1), id]));
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -75,13 +79,24 @@ export function Plans() {
           </Card>
         </div>
       </div>
-      <Card title="Route plans">
+      <Card
+        title="Route plans"
+        actions={
+          <Button variant="secondary" disabled={picked.length !== 2} onClick={() => navigate(`/plans/compare?a=${picked[0]}&b=${picked[1]}`)}>
+            Compare selected ({picked.length}/2)
+          </Button>
+        }
+      >
         <ErrorBox error={plans.error} />
         <Table
           rows={plans.data?.items ?? []}
           rowKey={(p) => p.id}
           empty="No plans for this date. Run an optimization."
           columns={[
+            {
+              header: "Compare",
+              cell: (p) => <input type="checkbox" aria-label={`Compare version ${p.version}`} checked={picked.includes(p.id)} onChange={() => toggle(p.id)} />,
+            },
             { header: "Plan", cell: (p) => <Link to={`/plans/${p.id}`} className="font-medium text-indigo-700 hover:underline">Version {p.version}</Link> },
             { header: "Status", cell: (p) => <Badge tone={planTone[p.status]}>{p.status.toLowerCase()}</Badge> },
             { header: "Algorithm", cell: (p) => algorithmLabel(p.algorithm) },
