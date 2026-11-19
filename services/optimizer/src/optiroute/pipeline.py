@@ -37,6 +37,19 @@ def solve_request(
     stage("SOLVING")
     run = solver(instance, SolveParams(req.solver.time_limit_s, req.solver.seed))
     stage("VALIDATING")
+    return score(req, instance, run, provider, algorithm=algorithm, started=started)
+
+
+def score(
+    req: v1.SolveRequest,
+    instance: Instance,
+    run: SolverRun,
+    provider: MatrixProvider,
+    *,
+    algorithm: str,
+    started: float,
+) -> v1.SolveResult:
+    """Validate and evaluate a plan (from a solver or from outside) into a SolveResult."""
     violations = validate(instance, run.solution)
     structural = any(v.code in STRUCTURAL for v in violations)
     evaluation = None if structural else evaluate(instance, run.solution)

@@ -125,6 +125,13 @@ def _submit(args: argparse.Namespace) -> int:
     return 0
 
 
+def _serve(args: argparse.Namespace) -> int:
+    import uvicorn
+
+    uvicorn.run("optiroute.api:create_app", factory=True, host=args.host, port=args.port)
+    return 0
+
+
 def _schema(args: argparse.Namespace) -> int:
     from optiroute.contracts import export_schemas
 
@@ -175,6 +182,11 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--time-limit", type=int, help="override solver.time_limit_s")
     p.add_argument("--org", default="00000000-0000-0000-0000-000000000001")
     p.set_defaults(func=_submit)
+
+    p = sub.add_parser("serve", help="internal HTTP API: /internal/v1/health and /validate")
+    p.add_argument("--host", default="127.0.0.1")
+    p.add_argument("--port", type=int, default=8081)
+    p.set_defaults(func=_serve)
 
     p = sub.add_parser("schema", help="export contract JSON Schemas")
     p.add_argument("--out", default=str(DEFAULT_SCHEMA_DIR))
