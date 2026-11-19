@@ -55,6 +55,11 @@ Go enforces a cooldown and a route-version check, because the plan must not have
 ## 4. Optimizer contract (v1)
 
 JSON Schema in `packages/api-contracts/optimizer/v1/` is the source of truth. Python uses pydantic models and Go uses generated structs.
+Regenerate the schemas with `make schemas`; a test fails if they drift from the pydantic models.
+**Status semantics:**
+- `INFEASIBLE`: the only violations are unserved orders while `allow_unassigned=false`.
+- `FAILED`: any other violation (the solver produced an invalid plan), or invalid input.
+- A structurally broken plan has `objective`, `kpis` and `routes` set to null or empty, and only its violations are reported.
 **Units inside the contract are integers: metres, seconds since local midnight of `planning_date`, grams, and cm³.** OR-Tools requires integer costs, so conversion happens once, in Go.
 
 ```jsonc
@@ -82,8 +87,8 @@ JSON Schema in `packages/api-contracts/optimizer/v1/` is the source of truth. Py
   "objective": { "total": 0, "travel": 0, "lateness": 0, "fleet": 0, "overtime": 0, "unserved": 0, "stability": 0 },
   "kpis": { "distance_m": 0, "duration_s": 0, "vehicles_used": 0, "late_stops": 0 },
   "routes": [{ "vehicle_id": "...", "driver_id": "...", "distance_m": 0, "duration_s": 0,
-               "stops": [{ "order_id": "...", "seq": 1, "arrival_s": 0, "departure_s": 0, "late_s": 0 }] }],
-  "unassigned": [{ "order_id": "...", "reason": "CAPACITY" }],
+               "stops": [{ "order_id": "...", "seq": 1, "arrival_s": 0, "service_start_s": 0, "departure_s": 0, "late_s": 0 }] }],
+  "unassigned": [{ "order_id": "...", "reason": "NOT_ROUTED" }],                  // or NO_ELIGIBLE_VEHICLE
   "validation": { "passed": true, "violations": [] },
   "meta": { "algorithm": "...", "solver_version": "...", "git_sha": "...", "seed": 42, "iterations": 0,
             "matrix_source": "OSRM", "matrix_key": "...", "execution_ms": 0, "recommend_publish": null }
