@@ -8,6 +8,21 @@ on:
 jobs:
   optimizer:
     runs-on: ubuntu-latest
+    services:  # for the worker integration tests (tests/test_worker.py)
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_DB: optiroute
+          POSTGRES_USER: optiroute
+          POSTGRES_PASSWORD: optiroute
+        ports: ["15432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U optiroute" --health-interval 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["16379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-retries 10
     defaults:
       run:
         working-directory: services/optimizer
