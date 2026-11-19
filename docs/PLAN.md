@@ -26,7 +26,7 @@ All work is in `services/optimizer/`. No HTTP, no database.
 - [x] `validation/evaluate.py`: shared cost breakdown (travel, lateness, fleet, overtime, unserved)
 - [x] `validation/validate.py`: independent hard-constraint checker. Write tests for **every** row of spec §18.4 (duplicate assignment, capacity, invalid vehicle, hard TW, shift exceeded, disconnected route, invalid depot sequence). Completed-stop reassignment waits for Phase 5
 - [x] `solvers/baseline.py`: Solomon (1987) time-oriented nearest neighbour (S0); distance-only NN stranded customers on R1/RC1
-- [ ] `solvers/clarke_wright/`: savings with capacity and TW feasibility checks (S1)
+- [x] `solvers/clarke_wright.py`: directional savings with O(1) merge checks for time windows and capacity, multi-depot clustering, real-vehicle assignment, insertion repair (S1). 56/56 feasible, median gap 20.0%
 - [ ] `solvers/ortools/`: full mapping from ARCHITECTURE §5, CW warm start, GLS, time limit, seed (S2)
 - [x] `benchmarks/`: Solomon loader for all 56 instances, using DIMACS distances so the published C101 best-known solution validates and scores exactly. Checksum-pinned download (`make fetch-solomon`), best-known distances in `solomon_manifest.csv`, and a runner that writes CSV with the gap (`make bench`)
 - [x] CLI: `optiroute solve | bench | fetch-solomon | schema`
