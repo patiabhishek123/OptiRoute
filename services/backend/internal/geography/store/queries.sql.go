@@ -60,6 +60,36 @@ func (q *Queries) CreateDepot(ctx context.Context, arg CreateDepotParams) (Creat
 	return i, err
 }
 
+const findDepotByName = `-- name: FindDepotByName :many
+SELECT id FROM core.depots
+WHERE organization_id = $1 AND lower(name) = lower($2)
+`
+
+type FindDepotByNameParams struct {
+	OrganizationID uuid.UUID
+	Name           string
+}
+
+func (q *Queries) FindDepotByName(ctx context.Context, arg FindDepotByNameParams) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, findDepotByName, arg.OrganizationID, arg.Name)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getDepot = `-- name: GetDepot :one
 SELECT id, organization_id, name,
        ST_Y(location::geometry)::float8 AS lat, ST_X(location::geometry)::float8 AS lon,

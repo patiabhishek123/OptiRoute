@@ -36,3 +36,7 @@ WHERE organization_id = @organization_id AND id = @id
 RETURNING id, organization_id, name,
           ST_Y(location::geometry)::float8 AS lat, ST_X(location::geometry)::float8 AS lon,
           is_active, created_at;
+
+-- name: FindDepotByName :many
+SELECT id FROM core.depots
+WHERE organization_id = @organization_id AND lower(name) = lower(@name);
