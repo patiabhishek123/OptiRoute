@@ -39,12 +39,17 @@ All work is in `services/optimizer/`. No HTTP, no database.
 
 ## Phase 2: Road network + optimizer service (weeks 3–4) → M2
 
-- [ ] `services/routing/osrm/`: script to download the regional extract and run `osrm-extract/partition/customize` (MLD); add the OSRM service to compose with a raised `--max-table-size`
-- [ ] `OsrmMatrixProvider`: deduplication, chunking, retries/timeouts, Redis cache (ARCHITECTURE §8)
-- [ ] Synthetic regional instance generator (depots + orders inside the extract's bounding box, realistic windows and demands), seeded
-- [ ] Worker: Redis Streams consumer, job state machine, conditional status transitions, cancellation checks, retry/DLQ rules (ARCHITECTURE §7)
-- [ ] Minimal FastAPI app: `GET /health`, `POST /validate`
-- [ ] Result metadata: solver version, git SHA, matrix source and key, timings
+- [x] `services/routing/osrm/build.sh` (`make osrm-build`): Odisha, clipped from the Geofabrik eastern zone. Memory/CPU-capped Docker steps, 58 s, peak 1.2 GB. OSRM compose service (`make osrm-up`, `--max-table-size 1000`, idles at ~300 MB)
+- [x] `OsrmMatrixProvider`: deduplication, chunking, retries/timeouts, Redis cache (ARCHITECTURE §8)
+- [x] Synthetic regional instance generator (`optiroute generate`): inland Odisha hubs, realistic windows and demands, van/truck fleet, seeded
+- [x] Worker (`optiroute worker`): Redis Streams consumer, job state machine, conditional status transitions, cancellation checks, retry/DLQ rules, lease heartbeat (ARCHITECTURE §7). `optiroute submit` stands in for the Go API
+- [x] Minimal FastAPI app (`optiroute serve`): `GET /internal/v1/health`, `POST /internal/v1/validate`
+- [x] Result metadata: solver version, git SHA, matrix source and key, timings
+
+**M2 met (2026-11-19).** On a synthetic Odisha instance (500 orders, 20 vehicles, 2 depots):
+- the 502×502 OSRM matrix took 2.4 s (51 ms on a cache hit); road distance is 1.46× straight-line
+- S2 within a 10 s limit: feasible, 2,740 km, every order served, about 4.5% cheaper than S1
+- a worker SIGKILLed mid-solve was reclaimed after the lease and completed (attempts = 2)
 
 **Exit (M2):** a job inserted by hand into Postgres plus a stream message produces a validated result using real OSRM distances. 500 orders on the regional extract solve within the time limit. Killing the worker mid-job leads to reclaim and completion.
 

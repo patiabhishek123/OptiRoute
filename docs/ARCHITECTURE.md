@@ -150,13 +150,25 @@ Use the four Postgres schemas and tables from spec §8. Changes and additions:
 - `HaversineMatrixProvider` (straight-line distance × detour factor, fixed speed) is used for unit tests and Solomon instances.
 - Traffic: a global or time-band multiplier on durations. Time-dependent `t_ij(τ)` is deferred.
 
+## 8a. Persistence tooling
+
+**No ORM.** Schema changes are plain SQL **goose** migrations in `services/backend/migrations/` (`-- +goose Up/Down`).
+The Go service runs them from Phase 3; until then `make db-migrate` applies the Up sections.
+Go queries use **sqlc** (SQL in, typed Go out) on **pgx**. The Python worker uses **psycopg** for its few `optimization.jobs` statements.
+
+Reasons:
+- The critical logic is SQL-shaped: conditional claims (`UPDATE … WHERE status = ANY(…) RETURNING`), partial indexes, invariant constraints and PostGIS `GEOGRAPHY` columns.
+- The same schema is shared by Go and Python.
+- Every schema change is a reviewed SQL diff, with no auto-migrate drift.
+- If an ORM is ever wanted, the Go-native option is ent with Atlas migrations. Decide before Phase 3.
+
 ## 9. Out of scope for V1
 
 Pickup-and-delivery, live traffic, Kafka, Kubernetes, the driver app ecosystem, enterprise integrations, LLM explanations, and automatic driver-vehicle pairing.
 
 ## 10. Open questions
 
-1. **Region** for the OSM extract, which sets OSRM memory needs and the timezone defaults.
+1. ~~**Region**~~: decided as **Odisha** (clipped from the Geofabrik eastern zone; timezone `Asia/Kolkata`). Other regions: set `REGION`, `ZONE_URL` and `BBOX` for `build.sh`.
 2. **Auth**: build JWT auth in-house (fast to ship) or use an external IdP such as Cognito or Auth0?
 3. **Default time-window mode** for pilot customers: hard or soft?
 4. **Real pilot data:** the Kaggle notebooks in this folder lack coordinates and time windows, so they can't serve as routing instances. Use Solomon/CVRPLIB plus a synthetic regional generator until a pilot operator shares anonymized data.
