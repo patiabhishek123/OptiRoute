@@ -1,4 +1,5 @@
-# Local development infrastructure. OSRM is added in Phase 2.
+# Local development infrastructure.
+# OSRM runs only with the `routing` profile (`make osrm-up`), after `make osrm-build`.
 # Host ports are overridable via .env (see .env.example).
 name: optiroute
 
@@ -31,6 +32,26 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  osrm:
+    profiles: [routing]
+    image: ${OSRM_IMAGE:-ghcr.io/project-osrm/osrm-backend:v6.0.0}
+    command: >-
+      osrm-routed --algorithm mld --max-table-size ${OSRM_MAX_TABLE_SIZE:-1000}
+      /data/${OSRM_REGION:-odisha}.osrm
+    ports:
+      - "127.0.0.1:${OPTI_OSRM_PORT:-15000}:5000"
+    volumes:
+      - ./services/routing/osrm/data:/data:ro
+    mem_limit: ${OSRM_MEM_LIMIT:-2g}
+    cpus: 2
+    healthcheck:
+      # Image has busybox wget, no curl; 127.0.0.1 because "localhost" resolves to ::1 first.
+      # The probe point is central Bhubaneswar, so a healthy Odisha router answers 200.
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:5000/nearest/v1/driving/85.82,20.29"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
 volumes:
   pgdata:
