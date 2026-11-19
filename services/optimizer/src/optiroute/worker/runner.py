@@ -91,7 +91,14 @@ class WorkerConfig:
 class Worker:
     def __init__(self, config: WorkerConfig, provider: MatrixProvider | None = None) -> None:
         self.cfg = config
-        self.redis = redis.Redis.from_url(config.redis_url, decode_responses=True)
+        # redis-py >= 8 defaults socket_timeout to 5 s, equal to the XREADGROUP block time, so an
+        # idle worker would time out on every empty read. Allow the block plus a margin.
+        self.redis = redis.Redis.from_url(
+            config.redis_url,
+            decode_responses=True,
+            socket_timeout=config.block_ms / 1000 + 10,
+            health_check_interval=30,
+        )
         self.db = psycopg.connect(config.database_url, autocommit=True, row_factory=dict_row)
         self.provider = provider or self._default_provider()
         self._stop = threading.Event()
@@ -124,8 +131,21 @@ class Worker:
         signal.signal(signal.SIGTERM, self.stop)
         signal.signal(signal.SIGINT, self.stop)
         log.info("worker %s consuming %s", self.cfg.consumer, self.cfg.stream)
+        backoff = 1.0
         while not self._stop.is_set():
-            self.run_once()
+            try:
+                self.run_once()
+                backoff = 1.0
+            except (redis.ConnectionError, redis.TimeoutError, psycopg.OperationalError) as e:
+                # Infrastructure blip: the unacked message stays pending and is retried or
+                # reclaimed, so the worker only needs to stay alive and reconnect.
+                log.warning("transient error, retrying in %.0fs: %s", backoff, e)
+                self._stop.wait(backoff)
+                backoff = min(backoff * 2, 30.0)
+                if self.db.closed:
+                    self.db = psycopg.connect(
+                        self.cfg.database_url, autocommit=True, row_factory=dict_row
+                    )
 
     def run_once(self) -> int:
         """Process at most one message (a reclaimed stale one first). Returns messages handled."""

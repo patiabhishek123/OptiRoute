@@ -5,7 +5,7 @@
 -- +goose Up
 CREATE SCHEMA IF NOT EXISTS optimization;
 
-CREATE TABLE optimization.jobs (
+CREATE TABLE IF NOT EXISTS optimization.jobs (
     id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id       UUID NOT NULL,
     kind                  VARCHAR(16) NOT NULL DEFAULT 'SOLVE'
@@ -35,10 +35,10 @@ CREATE TABLE optimization.jobs (
     UNIQUE (organization_id, idempotency_key)
 );
 
-CREATE INDEX jobs_org_created_idx ON optimization.jobs (organization_id, created_at DESC);
-CREATE INDEX jobs_active_idx ON optimization.jobs (status)
+CREATE INDEX IF NOT EXISTS jobs_org_created_idx ON optimization.jobs (organization_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS jobs_active_idx ON optimization.jobs (status)
     WHERE status IN ('QUEUED', 'PREPROCESSING', 'SOLVING', 'VALIDATING');
 
 -- +goose Down
-DROP TABLE optimization.jobs;
-DROP SCHEMA optimization;
+DROP TABLE IF EXISTS optimization.jobs;
+DROP SCHEMA IF EXISTS optimization;

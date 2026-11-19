@@ -94,18 +94,13 @@ def _submit(args: argparse.Namespace) -> int:
     import redis
     from psycopg.types.json import Jsonb
 
-    from optiroute.contracts.v1 import SolveRequest
+    from optiroute.contracts.v1 import SolverConfig, SolveRequest
 
     req = SolveRequest.model_validate_json(Path(args.request).read_text())
-    if args.algorithm or args.time_limit:
-        solver = req.solver.model_copy(
-            update={
-                k: v
-                for k, v in (("algorithm", args.algorithm), ("time_limit_s", args.time_limit))
-                if v
-            }
-        )
-        req = req.model_copy(update={"solver": solver})
+    overrides = {"algorithm": args.algorithm, "time_limit_s": args.time_limit}
+    if any(overrides.values()):
+        solver = {**req.solver.model_dump(), **{k: v for k, v in overrides.items() if v}}
+        req = req.model_copy(update={"solver": SolverConfig.model_validate(solver)})
     snapshot = json.loads(req.model_dump_json())
     with psycopg.connect(os.environ["DATABASE_URL"], autocommit=True) as db:
         (job_id,) = db.execute(
