@@ -17,7 +17,7 @@ Design references: [ARCHITECTURE.md](ARCHITECTURE.md). Full spec: `OptiRoute_Tec
 
 **Exit:** `make lint test` passes in CI (smoke tests: package import, CLI, OR-Tools solves a 4-node TSP).
 
-## Phase 1: Optimization engine (weeks 1–2) → M1
+## Phase 1: Optimization engine (weeks 1–2) → M1 ✅
 
 All work is in `services/optimizer/`. No HTTP, no database.
 
@@ -37,7 +37,7 @@ All work is in `services/optimizer/`. No HTTP, no database.
 
 **Exit (M1):** S0–S2 return validator-clean solutions on all Solomon 100-customer C1/R1/RC1 instances. Benchmark runs are reproducible with a fixed seed. Gap to best-known solutions is reported.
 
-## Phase 2: Road network + optimizer service (weeks 3–4) → M2
+## Phase 2: Road network + optimizer service (weeks 3–4) → M2 ✅
 
 - [x] `services/routing/osrm/build.sh` (`make osrm-build`): Odisha, clipped from the Geofabrik eastern zone. Memory/CPU-capped Docker steps, 58 s, peak 1.2 GB. OSRM compose service (`make osrm-up`, `--max-table-size 1000`, idles at ~300 MB)
 - [x] `OsrmMatrixProvider`: deduplication, chunking, retries/timeouts, Redis cache (ARCHITECTURE §8)
@@ -53,27 +53,51 @@ All work is in `services/optimizer/`. No HTTP, no database.
 
 **Exit (M2):** a job inserted by hand into Postgres plus a stream message produces a validated result using real OSRM distances. 500 orders on the regional extract solve within the time limit. Killing the worker mid-job leads to reclaim and completion.
 
-## Phase 3: Go backend (weeks 5–6) → M3
+## Phase 3: Go backend (weeks 5–6) → M3 ✅
 
-- [ ] `services/backend`: `cmd/api`, config from env, structured logging (`slog`), goose migrations, sqlc
-- [ ] Migrations: schemas and tables from spec §8 plus the additions in ARCHITECTURE §6
-- [ ] `identity`: orgs, users, login/refresh (JWT), org-scoped middleware
-- [ ] `geography` / `fleet`: depots, vehicles, drivers, daily vehicle↔driver pairing
-- [ ] `orders`: CRUD, CSV bulk import (validate and report per row), cancel
-- [ ] `planning`: snapshot builder (unit conversion happens here), job create/get/cancel, idempotency keys, outbox relay, job-event consumer → plan materialization
-- [ ] `dispatch`: get plans, approve/reject/activate (`order_assignments` swap, version check)
-- [ ] Integration tests with testcontainers: Go→Postgres, Go→Redis, full job round-trip with a real worker
+- [x] `services/backend`: `cmd/api` (`serve` and `migrate`), env config, `slog` JSON logs, goose migrations embedded in the binary, sqlc. Go 1.25 with pinned dependencies
+- [x] Migrations 00001–00003: spec §8 tables plus the ARCHITECTURE §6 additions. Tenant isolation and other invariants are enforced by the database
+- [x] `identity`: signup, login, rotating refresh tokens with reuse detection, logout, users (ADMIN), org-scoped middleware
+- [x] `geography` / `fleet`: depots (PostGIS), vehicles, drivers, transactional daily vehicle↔driver pairing
+- [x] `orders`: CRUD, all-or-nothing CSV import with errors per row (1,000 rows in ~100 ms), PENDING-only edit/cancel
+- [x] `planning`: snapshot builder (REPEATABLE READ, unit conversion), jobs with `Idempotency-Key`, outbox relay, status/result/cancel
+- [x] Job-event consumer → DRAFT plan materialization (idempotent, poison events dead-lettered)
+- [x] `dispatch`: plan reads, approve/reject/activate (`order_assignments` swap, stale-plan check, explicit `replace_active`)
+- [x] Integration tests against real Postgres/Redis: each test package gets its own throwaway migrated database instead of testcontainers (same isolation, no Docker-in-Docker in CI). All Go tests run with `-race`
+
+**M3 met (2026-11-19).** `make e2e` (API + worker + OSRM running) goes through the public API: signup → depot → 6 paired vans → CSV import of 100 orders → job (idempotent retry returns the same job) → worker on OSRM → DRAFT plan v1 (4 routes, 100 stops, 347 km, 0 late, 0 unassigned) → approve → activate (100 orders PLANNED, one ACTIVE plan) → a new job answers 422 NO_ORDERS.
+Two bugs were found and fixed on the way: idle-at-first-stop schedules, and a poison event that could block the plan consumer.
 
 **Exit (M3):** create org → depots → vehicles → import 100 orders via CSV → `POST /optimization/jobs` → plan available via the API. Duplicate requests with the same idempotency key create one job.
 
-## Phase 4: Dashboard + dispatch (weeks 7–8) → M4 (MVP)
+## Phase 4: Dashboard + dispatch (weeks 7–8) → M4 (MVP) ✅
 
-- [ ] Vite + React + TS app; auth; org-scoped API client (TanStack Query)
-- [ ] Order list + CSV upload with error report; fleet and driver pages
-- [ ] Run optimization (choose algorithm and time limit), live job status over SSE
-- [ ] MapLibre map: depots, orders, routes coloured by vehicle (OSRM `/route` geometry)
-- [ ] Plan comparison: baseline (S0) vs optimized, showing cost breakdown, distance, vehicles, late and unassigned orders
-- [ ] Approve → activate; CSV/PDF route export per driver
+- [x] Vite + React 19 + TS app in `apps/dashboard`; signup/login with refresh-token rotation; org-scoped API client (TanStack Query); Tailwind
+- [x] Orders (org-timezone windows, cancel) + CSV upload with the per-line error report; fleet, drivers and daily pairing pages
+- [x] Run optimization (algorithm, time limit, hard/soft windows; one `Idempotency-Key` per click); live job status by **polling** (1 s, only while a job runs). SSE is deferred: at a handful of jobs per day polling costs nothing
+- [x] MapLibre map: depots, numbered stops, routes coloured by vehicle along OSRM road geometry (`GET /route-plans/{id}/geometry`, cached; straight-line fallback flagged in the UI)
+- [x] Plan comparison (any two plans; baseline vs optimized): cost breakdown, distance, vehicles, route time, late and unassigned, with better/worse spelled out
+- [x] Approve → activate (with replace-active confirmation and stale-plan report); CSV export; printable per-driver route sheet (browser print → PDF)
+- [x] Playwright (3 specs) runs locally against OSRM and in CI against the real stack without OSRM
+
+**M4 met (2026-11-20).** Each spec §22 item is covered through the dashboard by the browser tests (`make dashboard-e2e`; CI job `e2e`):
+
+| §22 step | Where it's verified |
+|---|---|
+| 22 Create an organization | `fleet-orders`: signup page |
+| 23–26 Depots, vehicles, capacity, drivers and shifts | `fleet-orders`: Fleet tabs; daily pairing |
+| 27–28 Import orders with time windows | `fleet-orders`: CSV rejected with line/column errors, then imported; `dispatch`: 80 orders |
+| 29 Road-distance matrices | OSRM (Odisha) locally; haversine in CI |
+| 30–32 Baseline, OR-Tools, compare | `dispatch`: 6 vans, 80 orders. OR-Tools 19.7% cheaper and 124 km (33%) shorter than nearest neighbour, same 5 vans, 0 late, 0 unassigned |
+| 33 Vehicle-wise routes on a map | `planning`: the map reports every route and all 30 stops as actually rendered |
+| 34 Review and approve | `dispatch`: approve → activate; replacing an active plan needs confirmation |
+| 35 Export and dispatch | `dispatch`: CSV (one line per stop), per-driver route sheet; orders become PLANNED |
+| 36 Save optimization results | plans persisted, versioned, comparable |
+
+Bugs found by looking at screenshots, not by assertions:
+- A blank map, because Vite dropped MapLibre's web worker. The test had only checked that a canvas existed; it now asserts what was rendered.
+- An ETA three hours before its window, because the planned arrival was the van's arrival rather than the service start.
+- A misleading "driving time" label (it included waiting).
 
 **Exit (M4):** the full spec §22 MVP checklist works end to end with 5–10 vehicles and 50–100 orders. Playwright covers the happy path.
 
