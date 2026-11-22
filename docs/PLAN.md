@@ -103,9 +103,9 @@ Bugs found by looking at screenshots, not by assertions:
 
 ## Phase 5: Dynamic routing (weeks 9–10) → M5
 
-- [ ] Tracking: `POST /vehicles/:id/location`, stop arrive/complete, route progress
-- [ ] GPS simulator that drives the active plan along OSRM geometry at a configurable speed
-- [ ] `kind=REOPTIMIZE` snapshot: vehicle states, frozen stops, previous routes
+- [x] Tracking (`internal/tracking`): `POST|GET /vehicles/:id/location`, `POST /routes/:id/start`, stop arrive/complete (COMPLETED or FAILED with a reason), `GET /routes/:id/progress`. Only ACTIVE-plan routes move; route start dispatches its orders, the last finished stop completes the route; retries are idempotent. Migration 00004: one ARRIVED stop per route, one IN_PROGRESS route per vehicle, status↔timestamp checks, and a trigger that freezes COMPLETED/FAILED stops (spec §8.4)
+- [x] GPS simulator (`optiroute simulate`, `make simulate`): a plain client of the public API that drives the ACTIVE plan along its OSRM geometry. Configurable speed, GPS tick, seeded per-leg speed jitter and failure rate; waits for windows and serves for the planned time; parked vehicles keep reporting. Simulated time is compressed (`--speed-up`) but never ahead of now (the API rejects future timestamps), so past days replay instantly. `--until 12:00` pauses mid-day and a rerun resumes from recorded progress. Verified on the M3 e2e plan: 4 routes, 99 delivered + 1 failed, all routes COMPLETED, rerun is a no-op
+- [ ] `kind=REOPTIMIZE` snapshot: vehicle states, frozen stops, previous routes. Includes the frozen-stop checks: the request rejects frozen orders among `orders`, and activating over a started plan must carry every finished stop over unchanged (frozen stops are excluded from the problem, so the solver itself cannot move them)
 - [ ] Optimizer: virtual start nodes, stability cost (λ₁, λ₂) in the evaluator, warm start from the previous plan, `recommend_publish` threshold
 - [ ] Triggers: new-order insertion, breakdown (`/routes/:id/disruptions`), cooldown, version check
 - [ ] Dashboard: diff view (current vs proposed, with changed stops highlighted) → approve

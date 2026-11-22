@@ -19,6 +19,7 @@ import (
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/auth"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/httpx"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/osrm"
+	"github.com/patiabhishek123/OptiRoute/services/backend/internal/tracking"
 )
 
 type Deps struct {
@@ -49,6 +50,7 @@ func New(d Deps) (http.Handler, error) {
 	orders.NewHandler(d.DB, depots, d.Log).Routes(mux, authn)
 	planning.NewHandler(d.DB, d.Log).Routes(mux, authn)
 	dispatch.NewHandler(d.DB, d.Log).Routes(mux, authn)
+	tracking.NewHandler(d.DB, d.Log).Routes(mux, authn)
 	(&dispatch.Geometry{Pool: d.DB, Redis: d.Redis, OSRM: d.OSRM, Log: d.Log}).Routes(mux, authn)
 
 	// Liveness: the process is serving. Readiness: its dependencies answer.
