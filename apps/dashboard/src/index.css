@@ -7,7 +7,7 @@
  * Map route colors live in lib/routeStyle.ts and are intentionally not themed.
  */
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, sans-serif;
 
   --color-cream: #faf6ea; /* page background */
   --color-sand: #eee9d7; /* panels, cards */
