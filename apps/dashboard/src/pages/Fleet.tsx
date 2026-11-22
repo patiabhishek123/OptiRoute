@@ -12,7 +12,7 @@ export function Fleet() {
   const [tab, setTab] = useState<Tab>("depots");
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold tracking-tight">Fleet</h1>
+      <h1 className="text-3xl font-normal tracking-tight">Fleet</h1>
       <Tabs<Tab>
         value={tab}
         onChange={setTab}
@@ -257,7 +257,7 @@ function Pairing() {
       title={`Daily pairing · ${paired} of ${available.length} available vehicles have a driver`}
       actions={
         <input type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="Pairing date"
-          className="rounded-md px-2 py-1 text-sm ring-1 ring-slate-300" />
+          className="rounded-sm px-2 py-1 text-sm ring-1 ring-line-strong" />
       }
     >
       <div className="space-y-3">

@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router";
 import { api } from "../api/client";
 import { ACTIVE_JOB, type Algorithm, type Job, type Page, type PlanStatus, type PlanSummary } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
-import { Badge, Button, Card, ErrorBox, Field, Select, Table } from "../components/ui";
+import { Badge, Button, Card, ErrorBox, Field, Select, Table, type Tone } from "../components/ui";
 import { clock, km, money, todayIn } from "../lib/format";
 
 export const ALGORITHMS: { id: Algorithm; label: string }[] = [
@@ -14,14 +14,14 @@ export const ALGORITHMS: { id: Algorithm; label: string }[] = [
 ];
 export const algorithmLabel = (id: string) => ALGORITHMS.find((a) => a.id === id)?.label ?? id;
 
-export const planTone: Record<PlanStatus, "slate" | "green" | "amber" | "red" | "indigo"> = {
+export const planTone: Record<PlanStatus, Tone> = {
   DRAFT: "amber",
-  APPROVED: "indigo",
+  APPROVED: "plum",
   ACTIVE: "green",
   REJECTED: "red",
-  SUPERSEDED: "slate",
+  SUPERSEDED: "neutral",
 };
-const jobTone = (s: Job["status"]) => (s === "COMPLETED" ? "green" : ACTIVE_JOB.includes(s) ? "indigo" : s === "CANCELLED" ? "slate" : "red");
+const jobTone = (s: Job["status"]) => (s === "COMPLETED" ? "green" : ACTIVE_JOB.includes(s) ? "plum" : s === "CANCELLED" ? "neutral" : "red");
 
 export function Plans() {
   const { me, canWrite } = useAuth();
@@ -52,10 +52,10 @@ export function Plans() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h1 className="text-xl font-semibold tracking-tight">Plans</h1>
+        <h1 className="text-3xl font-normal tracking-tight">Plans</h1>
         <label className="text-sm">
-          <span className="block font-medium text-slate-700">Planning date</span>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="mt-1 rounded-md px-2 py-1.5 text-sm ring-1 ring-slate-300" />
+          <span className="block font-medium text-ink">Planning date</span>
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="mt-1 rounded-sm bg-cream px-2 py-1.5 text-sm ring-1 ring-line-strong focus:ring-2 focus:ring-plum focus:outline-none" />
         </label>
       </div>
       <div className="grid gap-4 lg:grid-cols-3">
@@ -97,7 +97,7 @@ export function Plans() {
               header: "Compare",
               cell: (p) => <input type="checkbox" aria-label={`Compare version ${p.version}`} checked={picked.includes(p.id)} onChange={() => toggle(p.id)} />,
             },
-            { header: "Plan", cell: (p) => <Link to={`/plans/${p.id}`} className="font-medium text-indigo-700 hover:underline">Version {p.version}</Link> },
+            { header: "Plan", cell: (p) => <Link to={`/plans/${p.id}`} className="font-medium text-plum-deep hover:underline">Version {p.version}</Link> },
             { header: "Status", cell: (p) => <Badge tone={planTone[p.status]}>{p.status.toLowerCase()}</Badge> },
             { header: "Algorithm", cell: (p) => algorithmLabel(p.algorithm) },
             { header: "Routes", cell: (p) => p.route_count, className: "text-right" },

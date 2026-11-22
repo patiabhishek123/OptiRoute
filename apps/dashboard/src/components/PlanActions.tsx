@@ -49,7 +49,7 @@ export function PlanActions({ plan }: { plan: Plan }) {
         )}
       </div>
       {confirmReplace && (
-        <div role="dialog" aria-label="Replace active plan" className="rounded-md bg-amber-50 p-3 text-sm ring-1 ring-amber-200">
+        <div role="dialog" aria-label="Replace active plan" className="rounded-sm bg-amber-50 p-3 text-sm ring-1 ring-amber-200">
           <p className="font-medium text-amber-900">This day already has an active plan.</p>
           <p className="text-amber-800">Activating replaces it. Orders the new plan does not cover go back to pending.</p>
           <div className="mt-2 flex gap-2">
@@ -59,7 +59,7 @@ export function PlanActions({ plan }: { plan: Plan }) {
         </div>
       )}
       {stale ? (
-        <div role="alert" className="rounded-md bg-rose-50 p-3 text-sm text-rose-800 ring-1 ring-rose-200">
+        <div role="alert" className="rounded-sm bg-rose-50 p-3 text-sm text-rose-800 ring-1 ring-rose-200">
           <p className="font-medium">Orders changed since this plan was optimized; re-optimize the day.</p>
           <ul className="list-inside list-disc">{stale.map((o) => <li key={o.external_order_id}>{o.external_order_id} is now {o.status.toLowerCase()}</li>)}</ul>
         </div>

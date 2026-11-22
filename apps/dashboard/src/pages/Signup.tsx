@@ -35,8 +35,8 @@ export function Signup() {
           {m.isPending ? "Creating…" : "Create organization"}
         </Button>
       </form>
-      <p className="mt-4 text-center text-sm text-slate-500">
-        Have an account? <Link to="/login" className="font-medium text-indigo-600 hover:underline">Sign in</Link>
+      <p className="mt-4 text-center text-sm text-ink-muted">
+        Have an account? <Link to="/login" className="font-medium text-plum-deep hover:underline">Sign in</Link>
       </p>
     </AuthShell>
   );
