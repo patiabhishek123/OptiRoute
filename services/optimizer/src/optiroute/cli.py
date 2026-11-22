@@ -1,4 +1,5 @@
-"""Command-line entry point: ``optiroute {solve,bench,fetch-solomon,schema}``."""
+"""Command-line entry point: ``optiroute {solve,bench,fetch-solomon,generate,worker,submit,serve,
+schema,simulate}``."""
 
 from __future__ import annotations
 
@@ -141,6 +142,41 @@ def _schema(args: argparse.Namespace) -> int:
     return 0
 
 
+def _simulate(args: argparse.Namespace) -> int:
+    import datetime as dt
+    import os
+
+    from optiroute.simulator import Api, Behaviour, SimulationError, simulate
+
+    try:
+        if args.token:
+            api = Api(args.api, args.token)
+        else:
+            password = os.environ.get("OPTIROUTE_PASSWORD")
+            if not (args.org and args.email and password):
+                print("give --token, or --org, --email and OPTIROUTE_PASSWORD", file=sys.stderr)
+                return 2
+            api = Api.login(args.api, args.org, args.email, password)
+        stats = simulate(
+            api,
+            planning_date=dt.date.fromisoformat(args.date) if args.date else None,
+            plan_id=args.plan,
+            behaviour=Behaviour(
+                speed_kmh=args.speed_kmh,
+                tick_s=args.tick,
+                jitter=args.jitter,
+                fail_rate=args.fail_rate,
+                seed=args.seed,
+            ),
+            speed_up=args.speed_up,
+            until=args.until,
+        )
+    except SimulationError as e:
+        print(f"simulate: {e}", file=sys.stderr)
+        return 1
+    return 1 if stats.errors else 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="optiroute")
     parser.add_argument("--version", action="version", version=f"optiroute {__version__}")
@@ -188,6 +224,25 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--host", default="127.0.0.1")
     p.add_argument("--port", type=int, default=8081)
     p.set_defaults(func=_serve)
+
+    p = sub.add_parser("simulate", help="drive the ACTIVE plan through the tracking API")
+    which = p.add_mutually_exclusive_group(required=True)
+    which.add_argument("--date", help="planning date (YYYY-MM-DD) whose ACTIVE plan to drive")
+    which.add_argument("--plan", help="route plan id (must be ACTIVE)")
+    p.add_argument("--api", default="http://localhost:8080/api/v1")
+    p.add_argument("--org", help="organization slug (password from OPTIROUTE_PASSWORD)")
+    p.add_argument("--email")
+    p.add_argument("--token", help="access token instead of logging in")
+    p.add_argument("--speed-kmh", type=float, default=35.0, help="average driving speed")
+    p.add_argument("--tick", type=int, default=60, help="simulated seconds between GPS fixes")
+    p.add_argument("--jitter", type=float, default=0.0, help="per-leg speed spread, e.g. 0.2")
+    p.add_argument("--fail-rate", type=float, default=0.0, help="share of failed deliveries")
+    p.add_argument("--seed", type=int, default=0)
+    p.add_argument(
+        "--speed-up", type=float, default=60.0, help="simulated/real time ratio (0 = no waiting)"
+    )
+    p.add_argument("--until", help="stop at HH:MM local time on the planning date (or ISO time)")
+    p.set_defaults(func=_simulate)
 
     p = sub.add_parser("schema", help="export contract JSON Schemas")
     p.add_argument("--out", default=str(DEFAULT_SCHEMA_DIR))
