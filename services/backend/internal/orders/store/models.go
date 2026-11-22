@@ -165,6 +165,8 @@ type RoutingRoute struct {
 	TotalDistanceKm          float64
 	EstimatedDurationMinutes int32
 	CreatedAt                time.Time
+	StartedAt                *time.Time
+	CompletedAt              *time.Time
 }
 
 type RoutingRoutePlan struct {
@@ -196,4 +198,5 @@ type RoutingRouteStop struct {
 	ActualArrival    *time.Time
 	ActualDeparture  *time.Time
 	StopStatus       string
+	FailureReason    *string
 }
