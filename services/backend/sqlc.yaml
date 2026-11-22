@@ -70,3 +70,10 @@ sql:
       go:
         <<: *go
         out: internal/dispatch/store
+  - engine: postgresql
+    schema: migrations
+    queries: internal/tracking/queries.sql
+    gen:
+      go:
+        <<: *go
+        out: internal/tracking/store

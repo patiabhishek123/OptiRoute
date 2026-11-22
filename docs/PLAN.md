@@ -103,7 +103,7 @@ Bugs found by looking at screenshots, not by assertions:
 
 ## Phase 5: Dynamic routing (weeks 9–10) → M5
 
-- [ ] Tracking: `POST /vehicles/:id/location`, stop arrive/complete, route progress
+- [x] Tracking (`internal/tracking`): `POST|GET /vehicles/:id/location`, `POST /routes/:id/start`, stop arrive/complete (COMPLETED or FAILED with a reason), `GET /routes/:id/progress`. Only ACTIVE-plan routes move; route start dispatches its orders, the last finished stop completes the route; retries are idempotent. Migration 00004: one ARRIVED stop per route, one IN_PROGRESS route per vehicle, status↔timestamp checks, and a trigger that freezes COMPLETED/FAILED stops (spec §8.4)
 - [ ] GPS simulator that drives the active plan along OSRM geometry at a configurable speed
 - [ ] `kind=REOPTIMIZE` snapshot: vehicle states, frozen stops, previous routes
 - [ ] Optimizer: virtual start nodes, stability cost (λ₁, λ₂) in the evaluator, warm start from the previous plan, `recommend_publish` threshold
