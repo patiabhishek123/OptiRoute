@@ -3,7 +3,7 @@ BACKEND := services/backend
 DASHBOARD := apps/dashboard
 DEV_ENV := set -a && . $(CURDIR)/.env.example && set +a
 
-.PHONY: help setup lint format test schemas fetch-solomon bench osrm-build osrm-up db-migrate worker sqlc api dashboard dashboard-e2e e2e up down logs
+.PHONY: help setup lint format test schemas fetch-solomon bench osrm-build osrm-up db-migrate worker sqlc api dashboard dashboard-e2e e2e simulate up down logs
 
 help:  ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -64,6 +64,11 @@ dashboard-e2e:  ## Browser tests (Playwright) against the real API (needs `make 
 
 e2e:  ## End-to-end check through the public API (needs `make api` and `make worker` running)
 	python3 scripts/e2e_api.py
+
+SPEED_UP ?= 60
+simulate:  ## Drive the day's ACTIVE plan via the tracking API (DATE= ORG= EMAIL=, OPTIROUTE_PASSWORD; UNTIL=12:00 SPEED_UP=0)
+	cd $(OPTIMIZER) && uv run optiroute simulate --date $(DATE) --org $(ORG) --email $(EMAIL) \
+		--speed-up $(SPEED_UP) $(if $(UNTIL),--until $(UNTIL)) $(SIM_ARGS)
 
 up:  ## Start Postgres+PostGIS and Redis
 	docker compose up -d --wait
