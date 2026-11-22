@@ -53,7 +53,8 @@ FOR UPDATE OF r;
 
 -- name: ListStops :many
 SELECT s.id, s.order_id, o.external_order_id, o.customer_name, s.sequence_number,
-       s.planned_arrival, s.actual_arrival, s.actual_departure, s.stop_status, s.failure_reason
+       s.planned_arrival, s.actual_arrival, s.actual_departure, s.stop_status, s.failure_reason,
+       o.time_window_start
 FROM routing.route_stops s
 JOIN operations.orders o ON o.id = s.order_id
 WHERE s.route_id = @route_id

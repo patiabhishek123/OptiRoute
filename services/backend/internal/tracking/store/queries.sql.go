@@ -264,7 +264,8 @@ func (q *Queries) LatestVehicleLocation(ctx context.Context, arg LatestVehicleLo
 
 const listStops = `-- name: ListStops :many
 SELECT s.id, s.order_id, o.external_order_id, o.customer_name, s.sequence_number,
-       s.planned_arrival, s.actual_arrival, s.actual_departure, s.stop_status, s.failure_reason
+       s.planned_arrival, s.actual_arrival, s.actual_departure, s.stop_status, s.failure_reason,
+       o.time_window_start
 FROM routing.route_stops s
 JOIN operations.orders o ON o.id = s.order_id
 WHERE s.route_id = $1
@@ -282,6 +283,7 @@ type ListStopsRow struct {
 	ActualDeparture *time.Time
 	StopStatus      string
 	FailureReason   *string
+	TimeWindowStart time.Time
 }
 
 func (q *Queries) ListStops(ctx context.Context, routeID uuid.UUID) ([]ListStopsRow, error) {
@@ -304,6 +306,7 @@ func (q *Queries) ListStops(ctx context.Context, routeID uuid.UUID) ([]ListStops
 			&i.ActualDeparture,
 			&i.StopStatus,
 			&i.FailureReason,
+			&i.TimeWindowStart,
 		); err != nil {
 			return nil, err
 		}

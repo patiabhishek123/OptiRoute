@@ -235,6 +235,17 @@ func TestRouteLifecycle(t *testing.T) {
 	}
 }
 
+func TestDelayComparesServiceStarts(t *testing.T) {
+	f := setup(t)
+	f.do("POST", routePath(f.route, "start"), "a", map[string]any{"at": ts("2026-11-02T08:00:00+05:30")}, nil)
+	// Planned service start 09:10, window opens 09:00: arriving at 08:30 means waiting until 09:00.
+	var p tracking.Progress
+	if code, _ := f.do("POST", stopPath(f.route, f.stops[0], "arrive"), "a",
+		map[string]any{"at": ts("2026-11-02T08:30:00+05:30")}, &p); code != 200 || p.DelayMinutes == nil || *p.DelayMinutes != -10 {
+		t.Fatalf("early arrival = %d, delay %v, want -10", code, p.DelayMinutes)
+	}
+}
+
 func TestTrackingGuards(t *testing.T) {
 	f := setup(t)
 
