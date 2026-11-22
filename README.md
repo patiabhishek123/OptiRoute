@@ -36,6 +36,7 @@ make down              # stop everything, including OSRM
 |---|---|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Components, data flow, optimizer contract, and decisions that resolve gaps in the spec |
 | [docs/PLAN.md](docs/PLAN.md) | Phased build plan with tasks and exit criteria (milestones M1–M6) |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Step-by-step AWS deployment on one EC2 server: provisioning, setup, HTTPS, releases, operations |
 | [docs/spec/](docs/spec/) | Original specification (`.docx`, source of truth for scope), component diagram and ER diagram |
 
 ## Stack
