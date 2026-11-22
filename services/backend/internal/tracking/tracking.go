@@ -185,7 +185,7 @@ type Progress struct {
 	StopsRemaining     int            `json:"stops_remaining"` // PENDING or ARRIVED
 	CurrentStop        *ProgressStop  `json:"current_stop"`    // the ARRIVED stop, if any
 	NextStop           *ProgressStop  `json:"next_stop"`       // the first PENDING stop by sequence
-	DelayMinutes       *int           `json:"delay_minutes"`   // latest actual arrival vs its plan; negative = early
+	DelayMinutes       *int           `json:"delay_minutes"`   // service start at the latest reached stop vs plan; negative = ahead
 	LastLocation       *Location      `json:"last_location"`
 	Stops              []ProgressStop `json:"stops"`
 }
@@ -209,6 +209,7 @@ func (h *Handler) loadProgress(ctx context.Context, org, id uuid.UUID) (Progress
 		CompletedAt: rt.CompletedAt, StopsTotal: len(rows), Stops: make([]ProgressStop, len(rows)),
 	}
 	var latest *ProgressStop
+	var latestWindow time.Time
 	for i, s := range rows {
 		p.Stops[i] = ProgressStop{s.ID, s.OrderID, s.ExternalOrderID, s.CustomerName, s.SequenceNumber, s.StopStatus,
 			s.PlannedArrival, s.ActualArrival, s.ActualDeparture, s.FailureReason}
@@ -228,11 +229,17 @@ func (h *Handler) loadProgress(ctx context.Context, org, id uuid.UUID) (Progress
 			}
 		}
 		if s.ActualArrival != nil && (latest == nil || s.ActualArrival.After(*latest.ActualArrival)) {
-			latest = stop
+			latest, latestWindow = stop, s.TimeWindowStart
 		}
 	}
 	if latest != nil {
-		d := int(math.Round(latest.ActualArrival.Sub(latest.PlannedArrival).Minutes()))
+		// planned_arrival is the planned service start, so compare service starts: a vehicle that
+		// arrives early and waits for the window is on time, not "early by the wait".
+		start := *latest.ActualArrival
+		if latestWindow.After(start) {
+			start = latestWindow
+		}
+		d := int(math.Round(start.Sub(latest.PlannedArrival).Minutes()))
 		p.DelayMinutes = &d
 	}
 	if l, err := q.LatestRouteLocation(ctx, &id); err == nil {
