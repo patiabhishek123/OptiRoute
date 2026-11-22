@@ -39,21 +39,21 @@ export function PlanDetail() {
   }, [plan.data, geometry.data, styles, tz]);
 
   if (plan.error) return <ErrorBox error={plan.error} />;
-  if (!plan.data) return <p className="text-sm text-slate-500">Loading plan…</p>;
+  if (!plan.data) return <p className="text-sm text-ink-muted">Loading plan…</p>;
   const p = plan.data;
   const usedDepots = (depots.data?.items ?? []).filter((d) => d.is_active);
   const straight = geometry.data?.routes.some((l) => l.source === "STRAIGHT");
   const current = p.routes.find((r) => r.id === selected);
 
   return (
-    <div className="flex h-[calc(100vh-3rem)] flex-col gap-4">
+    <div className="flex h-[calc(100vh-4rem)] flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <Link to="/plans" className="text-sm text-indigo-700 hover:underline">← Plans</Link>
-          <h1 className="text-xl font-semibold tracking-tight">
+          <Link to="/plans" className="text-sm text-plum-deep hover:underline">← Plans</Link>
+          <h1 className="text-3xl font-normal tracking-tight">
             Plan v{p.version} · {p.planning_date} <Badge tone={planTone[p.status]}>{p.status.toLowerCase()}</Badge>
           </h1>
-          <p className="text-sm text-slate-500">{algorithmLabel(p.algorithm)}</p>
+          <p className="text-sm text-ink-muted">{algorithmLabel(p.algorithm)}</p>
           <div className="mt-2 flex flex-wrap items-start gap-2">
             <PlanActions plan={p} />
             <Button variant="secondary" onClick={() => download(`plan-${p.planning_date}-v${p.version}.csv`, planCsv(p, (iso) => clock(iso, tz)))}>
@@ -78,23 +78,23 @@ export function PlanDetail() {
           <Card title={current ? `${current.registration_number} · stops` : "Routes"}
             actions={current && (
               <>
-                <Link to={`/plans/${p.id}/routes/${current.id}/sheet`} className="text-sm text-indigo-700 hover:underline">Route sheet</Link>
-                <button className="text-sm text-indigo-700 hover:underline" onClick={() => setSelected(null)}>All routes</button>
+                <Link to={`/plans/${p.id}/routes/${current.id}/sheet`} className="text-sm text-plum-deep hover:underline">Route sheet</Link>
+                <button className="text-sm text-plum-deep hover:underline" onClick={() => setSelected(null)}>All routes</button>
               </>
             )}>
             {!current ? (
-              <ul className="divide-y divide-slate-100" aria-label="Routes">
+              <ul className="divide-y divide-line" aria-label="Routes">
                 {p.routes.map((r) => {
                   const s = styles.get(r.vehicle_id)!;
                   return (
                     <li key={r.id}>
-                      <button onClick={() => setSelected(r.id)} className="flex w-full items-center gap-3 py-2 text-left text-sm hover:bg-slate-50">
+                      <button onClick={() => setSelected(r.id)} className="flex w-full items-center gap-3 py-2 text-left text-sm hover:bg-sand-deep/50">
                         <Swatch color={s.color} dashed={s.dashed} />
                         <span className="flex-1">
                           <span className="font-medium">{r.registration_number}</span>
-                          <span className="block text-xs text-slate-500">{r.driver_name ?? "no driver"}</span>
+                          <span className="block text-xs text-ink-muted">{r.driver_name ?? "no driver"}</span>
                         </span>
-                        <span className="text-right text-xs text-slate-600">
+                        <span className="text-right text-xs text-ink-muted">
                           {r.stops.length} stops<br />{km(r.total_distance_km)} · {Math.round(r.estimated_duration_minutes / 6) / 10} h
                         </span>
                       </button>
@@ -108,10 +108,10 @@ export function PlanDetail() {
                   const late = new Date(s.planned_arrival) > new Date(s.time_window_end);
                   return (
                     <li key={s.id} className="flex gap-3">
-                      <span className="w-6 shrink-0 text-right font-mono text-xs text-slate-500">{s.sequence}</span>
+                      <span className="w-6 shrink-0 text-right font-mono text-xs text-ink-muted">{s.sequence}</span>
                       <span className="flex-1">
-                        <span className="font-medium">{s.customer_name}</span> <span className="font-mono text-xs text-slate-500">{s.external_order_id}</span>
-                        <span className="block text-xs text-slate-500">
+                        <span className="font-medium">{s.customer_name}</span> <span className="font-mono text-xs text-ink-muted">{s.external_order_id}</span>
+                        <span className="block text-xs text-ink-muted">
                           ETA {clock(s.planned_arrival, tz)} · window {timeWindow(s.time_window_start, s.time_window_end, tz)}
                         </span>
                       </span>
@@ -131,8 +131,8 @@ export function PlanDetail() {
 function Kpi({ label, value, alert = false }: { label: string; value: string; alert?: boolean }) {
   return (
     <div>
-      <dt className="text-xs text-slate-500">{label}</dt>
-      <dd className={`font-semibold ${alert ? "text-rose-700" : "text-slate-900"}`}>{value}</dd>
+      <dt className="text-xs text-ink-muted">{label}</dt>
+      <dd className={`font-semibold ${alert ? "text-rose-700" : "text-ink"}`}>{value}</dd>
     </div>
   );
 }

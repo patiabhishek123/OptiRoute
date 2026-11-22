@@ -3,16 +3,16 @@ import { useRef, useState } from "react";
 import { api, ApiError } from "../api/client";
 import type { Depot, ImportResult, Order, OrderStatus, Page, RowError } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
-import { Badge, Button, Card, ErrorBox, Select, Table } from "../components/ui";
+import { Badge, Button, Card, ErrorBox, Select, Table, type Tone } from "../components/ui";
 import { timeWindow, todayIn } from "../lib/format";
 
-const statusTone: Record<OrderStatus, "slate" | "green" | "amber" | "red" | "indigo"> = {
+const statusTone: Record<OrderStatus, Tone> = {
   PENDING: "amber",
-  PLANNED: "indigo",
-  DISPATCHED: "indigo",
+  PLANNED: "plum",
+  DISPATCHED: "plum",
   DELIVERED: "green",
   FAILED: "red",
-  CANCELLED: "slate",
+  CANCELLED: "neutral",
 };
 
 export function Orders() {
@@ -41,16 +41,16 @@ export function Orders() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Orders</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-3xl font-normal tracking-tight">Orders</h1>
+          <p className="text-sm text-ink-muted">
             {items.length} orders on {date}
             {Object.entries(counts).map(([s, n]) => ` · ${n} ${s.toLowerCase()}`)}
           </p>
         </div>
         <div className="flex items-end gap-2">
           <label className="text-sm">
-            <span className="block font-medium text-slate-700">Planning date</span>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="mt-1 rounded-md px-2 py-1.5 text-sm ring-1 ring-slate-300" />
+            <span className="block font-medium text-ink">Planning date</span>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="mt-1 rounded-sm bg-cream px-2 py-1.5 text-sm ring-1 ring-line-strong focus:ring-2 focus:ring-plum focus:outline-none" />
           </label>
           <div className="w-40">
             <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value)}>
@@ -118,14 +118,14 @@ function CsvUpload({ date, onDone }: { date: string; onDone: () => void }) {
   return (
     <Card title="Import orders from CSV">
       <div className="space-y-3 text-sm">
-        <p className="text-slate-600">
+        <p className="text-ink-muted">
           Columns: <code>order_id, customer, lat, lon, from, to</code> (required) plus optional <code>weight_kg, volume_m3, phone,
           depot, priority, service_minutes, date</code>. Times like <code>09:00</code> are read in the organization's timezone on
           the planning date ({date}).
         </p>
         <div className="flex flex-wrap items-center gap-4">
           <input ref={input} type="file" accept=".csv,text/csv" aria-label="CSV file"
-            className="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:font-medium file:text-indigo-700" />
+            className="text-sm file:mr-3 file:rounded-sm file:border-0 file:bg-ink file:px-3 file:py-1.5 file:font-medium file:text-cream hover:file:bg-ink/85" />
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={skipExisting} onChange={(e) => setSkipExisting(e.target.checked)} />
             Skip orders already imported
@@ -146,7 +146,7 @@ function CsvUpload({ date, onDone }: { date: string; onDone: () => void }) {
           </p>
         )}
         {rowErrors ? (
-          <div role="alert" className="rounded-md bg-rose-50 p-3 ring-1 ring-rose-200">
+          <div role="alert" className="rounded-sm bg-rose-50 p-3 ring-1 ring-rose-200">
             <p className="mb-2 font-medium text-rose-800">
               Nothing was imported: {rowErrors.total_errors} problem{rowErrors.total_errors === 1 ? "" : "s"} found. Fix the file and upload it again.
             </p>

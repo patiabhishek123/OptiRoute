@@ -8,9 +8,9 @@ export function AuthShell({ title, children }: { title: string; children: React.
   return (
     <div className="flex min-h-screen items-center justify-center p-6">
       <div className="w-full max-w-sm">
-        <h1 className="mb-1 text-2xl font-semibold tracking-tight">OptiRoute</h1>
-        <p className="mb-6 text-sm text-slate-500">{title}</p>
-        <div className="rounded-lg bg-white p-6 shadow-sm ring-1 ring-slate-200">{children}</div>
+        <h1 className="mb-1 text-3xl font-normal tracking-tight">OptiRoute</h1>
+        <p className="mb-6 text-sm text-ink-muted">{title}</p>
+        <div className="rounded-sm bg-sand p-6">{children}</div>
       </div>
     </div>
   );
@@ -37,8 +37,8 @@ export function Login() {
           {m.isPending ? "Signing in…" : "Sign in"}
         </Button>
       </form>
-      <p className="mt-4 text-center text-sm text-slate-500">
-        New here? <Link to="/signup" className="font-medium text-indigo-600 hover:underline">Create an organization</Link>
+      <p className="mt-4 text-center text-sm text-ink-muted">
+        New here? <Link to="/signup" className="font-medium text-plum-deep hover:underline">Create an organization</Link>
       </p>
     </AuthShell>
   );

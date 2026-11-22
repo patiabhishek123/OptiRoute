@@ -71,10 +71,10 @@ export function RouteMap({ routes, depots, selected, onSelect }: Props) {
         layout: { "text-field": ["to-string", ["get", "seq"]], "text-size": 10, "text-font": ["Noto Sans Bold"], "text-allow-overlap": true },
         paint: { "text-color": "#ffffff", "text-opacity": ["get", "opacity"] } });
       m.addLayer({ id: "depots", type: "circle", source: "depots",
-        paint: { "circle-radius": 11, "circle-color": "#0f172a", "circle-stroke-color": "#ffffff", "circle-stroke-width": 3 } });
+        paint: { "circle-radius": 11, "circle-color": "#1e1d1a", "circle-stroke-color": "#ffffff", "circle-stroke-width": 3 } });
       m.addLayer({ id: "depot-labels", type: "symbol", source: "depots",
         layout: { "text-field": ["get", "name"], "text-size": 12, "text-font": ["Noto Sans Bold"], "text-offset": [0, 1.6], "text-anchor": "top" },
-        paint: { "text-color": "#0f172a", "text-halo-color": "#ffffff", "text-halo-width": 2 } });
+        paint: { "text-color": "#1e1d1a", "text-halo-color": "#ffffff", "text-halo-width": 2 } });
 
       const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 12 });
       m.on("mouseenter", "stop-circles", (e: MapLayerMouseEvent) => {
@@ -83,7 +83,7 @@ export function RouteMap({ routes, depots, selected, onSelect }: Props) {
         m.getCanvas().style.cursor = "pointer";
         const p = f.properties as { title: string; detail: string; route: string };
         popup.setLngLat((f.geometry as GeoJSON.Point).coordinates as [number, number])
-          .setHTML(`<strong>${escapeHtml(p.title)}</strong><br>${escapeHtml(p.detail)}<br><span style="color:#64748b">${escapeHtml(p.route)}</span>`)
+          .setHTML(`<strong>${escapeHtml(p.title)}</strong><br>${escapeHtml(p.detail)}<br><span style="color:#625e55">${escapeHtml(p.route)}</span>`)
           .addTo(m);
       });
       m.on("mouseleave", "stop-circles", () => {
@@ -151,7 +151,7 @@ export function RouteMap({ routes, depots, selected, onSelect }: Props) {
     else pendingFit.current = fit;
   }, [routeKey, depots.length]);
 
-  return <div ref={container} className="h-full min-h-[480px] w-full rounded-lg ring-1 ring-slate-200" data-testid="route-map" />;
+  return <div ref={container} className="h-full min-h-[480px] w-full rounded-sm ring-1 ring-line" data-testid="route-map" />;
 }
 
 function empty(): GeoJSON.FeatureCollection {
