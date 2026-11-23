@@ -3,6 +3,7 @@
 package fleet
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -58,12 +59,21 @@ type Assignment struct {
 	DriverName         string    `json:"driver_name,omitempty"`
 }
 
-type Handler struct {
-	pool *pgxpool.Pool
-	log  *slog.Logger
+// DepotResolver turns a depot reference (UUID or name) into an id. Implemented by geography;
+// fleet never reads depot tables itself (spec §6.1: modules interact through interfaces).
+type DepotResolver interface {
+	ResolveDepot(ctx context.Context, org uuid.UUID, ref string) (uuid.UUID, error)
 }
 
-func NewHandler(pool *pgxpool.Pool, log *slog.Logger) *Handler { return &Handler{pool, log} }
+type Handler struct {
+	pool   *pgxpool.Pool
+	depots DepotResolver
+	log    *slog.Logger
+}
+
+func NewHandler(pool *pgxpool.Pool, depots DepotResolver, log *slog.Logger) *Handler {
+	return &Handler{pool, depots, log}
+}
 
 func (h *Handler) Routes(mux *http.ServeMux, authn func(http.Handler) http.Handler) {
 	read := func(f httpx.HandlerFunc) http.Handler { return authn(httpx.Handle(h.log, f)) }
@@ -71,12 +81,14 @@ func (h *Handler) Routes(mux *http.ServeMux, authn func(http.Handler) http.Handl
 		return authn(auth.RequireRole(httpx.Handle(h.log, f), auth.Writers...))
 	}
 	mux.Handle("POST /api/v1/vehicles", write(h.createVehicle))
+	mux.Handle("POST /api/v1/vehicles/bulk-import", write(h.importVehicles))
 	mux.Handle("GET /api/v1/vehicles", read(h.listVehicles))
 	mux.Handle("GET /api/v1/vehicles/{id}", read(h.getVehicle))
 	mux.Handle("PATCH /api/v1/vehicles/{id}", write(h.updateVehicle))
 	mux.Handle("POST /api/v1/vehicles/{id}/unavailable", write(h.markUnavailable))
 
 	mux.Handle("POST /api/v1/drivers", write(h.createDriver))
+	mux.Handle("POST /api/v1/drivers/bulk-import", write(h.importDrivers))
 	mux.Handle("GET /api/v1/drivers", read(h.listDrivers))
 	mux.Handle("GET /api/v1/drivers/{id}", read(h.getDriver))
 	mux.Handle("PATCH /api/v1/drivers/{id}", write(h.updateDriver))
@@ -98,7 +110,10 @@ type vehicleInput struct {
 	Status             *string    `json:"status"`
 }
 
-func (in *vehicleInput) validate(create bool) error {
+func (in *vehicleInput) validate(create bool) error { return problems(in.check(create)) }
+
+// check returns field -> problem for the fields that are present (required ones when create).
+func (in *vehicleInput) check(create bool) map[string]string {
 	p := map[string]string{}
 	trim(in.RegistrationNumber)
 	trim(in.VehicleType)
@@ -122,7 +137,7 @@ func (in *vehicleInput) validate(create bool) error {
 	if create && in.Status != nil {
 		p["status"] = "set status with PATCH after creation"
 	}
-	return problems(p)
+	return p
 }
 
 func (h *Handler) createVehicle(w http.ResponseWriter, r *http.Request) error {
@@ -262,7 +277,10 @@ type driverInput struct {
 	start, end *pgtype.Time
 }
 
-func (in *driverInput) validate(create bool) error {
+func (in *driverInput) validate(create bool) error { return problems(in.check(create)) }
+
+// check returns field -> problem for the fields that are present (required ones when create).
+func (in *driverInput) check(create bool) map[string]string {
 	p := map[string]string{}
 	trim(in.Name)
 	required(p, create, "name", in.Name != nil)
@@ -291,7 +309,7 @@ func (in *driverInput) validate(create bool) error {
 		}
 	}
 	oneOf(p, "status", in.Status, driverStatuses)
-	return problems(p)
+	return p
 }
 
 func (h *Handler) createDriver(w http.ResponseWriter, r *http.Request) error {
