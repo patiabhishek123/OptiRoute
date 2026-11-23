@@ -1,0 +1,11 @@
+registration_number,depot,vehicle_type,capacity_weight_kg,capacity_volume_m3,cost_per_km,fixed_cost
+OD-02-AB-1101,Bhubaneswar Hub,van,400,3,12,600
+OD-02-AB-1102,Bhubaneswar Hub,van,400,3,12,600
+OD-02-AB-1103,Bhubaneswar Hub,van,400,3,12,600
+OD-02-AB-1104,Bhubaneswar Hub,van,400,3,12,600
+OD-02-TR-2201,Bhubaneswar Hub,truck,1200,8,20,1500
+OD-02-BK-3301,Bhubaneswar Hub,bike,30,0.15,4,200
+OD-02-BK-3302,Bhubaneswar Hub,bike,30,0.15,4,200
+OD-05-AB-4401,Cuttack Hub,van,400,3,12,600
+OD-05-AB-4402,Cuttack Hub,van,400,3,12,600
+OD-05-TR-5501,Cuttack Hub,truck,1200,8,20,1500

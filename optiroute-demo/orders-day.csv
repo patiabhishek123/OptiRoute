@@ -1,0 +1,141 @@
+order_id,depot,customer_name,customer_phone,area,lat,lon,weight_kg,volume_m3,window_start,window_end,service_minutes,priority
+KC-0001,Bhubaneswar Hub,Tapan Swain,+91 9573622146,Khandagiri,20.29833,85.83851,15.4,0.080,09:00,12:00,10,1
+KC-0002,Bhubaneswar Hub,Jagannath Nayak,+91 9370060143,Chandrasekharpur,20.30925,85.83442,1.3,0.005,09:00,12:00,8,1
+KC-0003,Bhubaneswar Hub,Pati Clinic,+91 9126563621,Pokhariput,20.34394,85.85103,9.2,0.048,16:00,17:30,5,3
+KC-0004,Bhubaneswar Hub,Tapan Nayak,+91 9663341564,Old Town,20.29619,85.82442,14.3,0.061,12:00,15:00,8,1
+KC-0005,Bhubaneswar Hub,Chinmayee Swain,+91 9561074970,Rasulgarh,20.22408,85.78506,19.4,0.086,09:00,18:00,15,1
+KC-0006,Bhubaneswar Hub,Rakesh Sahoo,+91 9701076435,Jaydev Vihar,20.30086,85.82938,17.8,0.086,09:00,12:00,15,3
+KC-0007,Bhubaneswar Hub,Pati Boutique,+91 9962801954,Baramunda,20.33445,85.78820,11.4,0.072,09:00,18:00,5,1
+KC-0008,Bhubaneswar Hub,Rakesh Tripathy,+91 9136099144,Old Town,20.29588,85.82389,12.2,0.056,16:00,17:30,8,1
+KC-0009,Bhubaneswar Hub,Tapan Das,+91 9796373372,Old Town,20.26693,85.82153,11.9,0.048,12:00,15:00,8,3
+KC-0010,Bhubaneswar Hub,Swain Kirana Store,+91 9755126092,Khandagiri,20.34150,85.76340,4.5,0.019,10:00,11:30,5,1
+KC-0011,Bhubaneswar Hub,Tapan Pati,+91 9686052164,Khandagiri,20.25373,85.77300,4.7,0.029,12:00,15:00,10,1
+KC-0012,Bhubaneswar Hub,Nibedita Behera,+91 9542423666,Jaydev Vihar,20.28972,85.80648,8.0,0.046,15:00,18:00,5,1
+KC-0013,Bhubaneswar Hub,Aarav Mohanty,+91 9648024772,Rasulgarh,20.31224,85.80985,2.2,0.014,09:00,18:00,5,1
+KC-0014,Bhubaneswar Hub,Behera Bakery,+91 9565582577,Unit 4,20.29746,85.82589,23.8,0.122,12:00,15:00,5,1
+KC-0015,Bhubaneswar Hub,Ananya Panda,+91 9910363366,Kalinga Nagar,20.30990,85.86576,23.1,0.184,12:00,15:00,10,1
+KC-0016,Bhubaneswar Hub,Debasis Pati,+91 9809982702,Nayapalli,20.30930,85.83933,13.7,0.062,09:00,12:00,10,2
+KC-0017,Bhubaneswar Hub,Pati Stationers,+91 9657631828,Rasulgarh,20.27731,85.85436,7.3,0.040,15:00,18:00,8,1
+KC-0018,Bhubaneswar Hub,Subhashree Tripathy,+91 9454809561,Jaydev Vihar,20.29339,85.84366,3.3,0.022,15:00,18:00,5,1
+KC-0019,Bhubaneswar Hub,Swain Clinic,+91 9696785442,Unit 4,20.29858,85.82070,9.4,0.045,09:00,18:00,10,2
+KC-0020,Bhubaneswar Hub,Gayatri Das,+91 9835027062,Saheed Nagar,20.29149,85.81551,4.2,0.019,09:00,18:00,5,1
+KC-0021,Bhubaneswar Hub,Sahoo Kirana Store,+91 9114893374,Jaydev Vihar,20.28998,85.86289,21.1,0.134,09:00,18:00,5,2
+KC-0022,Bhubaneswar Hub,Tripathy Stationers,+91 9438201222,Rasulgarh,20.33413,85.81555,2.4,0.016,10:00,11:30,5,3
+KC-0023,Bhubaneswar Hub,Itishree Tripathy,+91 9370129357,Jaydev Vihar,20.30357,85.86080,12.1,0.049,09:00,18:00,5,1
+KC-0024,Bhubaneswar Hub,Das Clinic,+91 9924519279,Jaydev Vihar,20.29223,85.80594,136.6,0.873,12:00,15:00,20,2
+KC-0025,Bhubaneswar Hub,Behera Stationers,+91 9740972993,Kalinga Nagar,20.29050,85.79131,3.7,0.018,12:00,15:00,5,3
+KC-0026,Bhubaneswar Hub,Debasis Pati,+91 9682963499,Saheed Nagar,20.32988,85.86111,11.0,0.065,16:00,17:30,8,1
+KC-0027,Bhubaneswar Hub,Pradeep Pati,+91 9772997487,Unit 4,20.31257,85.84795,1.6,0.010,09:00,18:00,8,3
+KC-0028,Bhubaneswar Hub,Behera Stationers,+91 9160404143,Kalinga Nagar,20.30997,85.80797,130.6,0.576,09:00,12:00,20,1
+KC-0029,Bhubaneswar Hub,Rashmi Rath,+91 9703002920,Old Town,20.26644,85.82279,4.6,0.021,09:00,18:00,8,1
+KC-0030,Bhubaneswar Hub,Jagannath Pati,+91 9774327683,Jaydev Vihar,20.28867,85.81529,14.2,0.078,12:00,15:00,15,1
+KC-0031,Bhubaneswar Hub,Behera Clinic,+91 9248134051,Pokhariput,20.28629,85.79062,20.1,0.099,09:00,12:00,5,3
+KC-0032,Bhubaneswar Hub,Sambit Nayak,+91 9678726398,Baramunda,20.31221,85.90644,133.4,0.681,09:00,18:00,20,5
+KC-0033,Bhubaneswar Hub,Jagannath Pati,+91 9414513013,Old Town,20.28103,85.83793,14.1,0.088,09:00,18:00,15,1
+KC-0034,Bhubaneswar Hub,Smruti Mishra,+91 9972016138,Baramunda,20.30182,85.83954,18.9,0.156,09:00,18:00,10,1
+KC-0035,Bhubaneswar Hub,Rashmi Das,+91 9495133271,Old Town,20.31589,85.80641,13.4,0.057,09:00,12:00,15,1
+KC-0036,Bhubaneswar Hub,Sahoo Clinic,+91 9795296770,Patia,20.30068,85.82947,24.6,0.135,09:00,12:00,15,1
+KC-0037,Bhubaneswar Hub,Das Boutique,+91 9935329516,Old Town,20.26213,85.74286,11.9,0.061,12:00,15:00,5,3
+KC-0038,Bhubaneswar Hub,Tapan Nayak,+91 9436813925,Nayapalli,20.28697,85.82889,14.5,0.089,12:00,15:00,15,1
+KC-0039,Bhubaneswar Hub,Swain Electronics,+91 9563100113,Old Town,20.25708,85.88168,21.0,0.107,09:00,12:00,5,1
+KC-0040,Bhubaneswar Hub,Pati Kirana Store,+91 9387666198,Old Town,20.32061,85.79552,7.3,0.038,12:00,15:00,5,1
+KC-0041,Bhubaneswar Hub,Rakesh Behera,+91 9325392591,Jaydev Vihar,20.26390,85.84639,3.3,0.015,09:00,18:00,8,1
+KC-0042,Bhubaneswar Hub,Swain Hardware,+91 9994343086,Rasulgarh,20.29413,85.81151,1.3,0.007,12:00,15:00,5,1
+KC-0043,Bhubaneswar Hub,Subhashree Behera,+91 9397329246,Unit 4,20.29455,85.82187,143.6,0.884,10:00,11:30,20,1
+KC-0044,Bhubaneswar Hub,Subhashree Rath,+91 9750775672,Kalinga Nagar,20.23419,85.80801,1.3,0.010,09:00,18:00,5,1
+KC-0045,Bhubaneswar Hub,Behera Bakery,+91 9605485191,Kalinga Nagar,20.28107,85.81825,3.6,0.023,09:00,12:00,8,1
+KC-0046,Bhubaneswar Hub,Panda Electronics,+91 9123379797,Rasulgarh,20.23067,85.83345,12.7,0.078,09:00,18:00,5,1
+KC-0047,Bhubaneswar Hub,Bikash Tripathy,+91 9809914819,Baramunda,20.30233,85.81436,10.6,0.071,09:00,18:00,5,1
+KC-0048,Bhubaneswar Hub,Tapan Mishra,+91 9809268875,Chandrasekharpur,20.26223,85.82846,3.2,0.017,09:00,18:00,10,2
+KC-0049,Bhubaneswar Hub,Jagannath Mohanty,+91 9598011586,Khandagiri,20.31801,85.81912,24.1,0.128,12:00,15:00,8,1
+KC-0050,Bhubaneswar Hub,Rakesh Tripathy,+91 9449782776,Chandrasekharpur,20.22397,85.81787,20.0,0.129,09:00,12:00,15,1
+KC-0051,Bhubaneswar Hub,Ananya Tripathy,+91 9137069718,Old Town,20.27237,85.81605,24.5,0.114,16:00,17:30,5,1
+KC-0052,Bhubaneswar Hub,Mohanty Electronics,+91 9830065350,Nayapalli,20.29541,85.83115,14.0,0.084,09:00,18:00,8,3
+KC-0053,Bhubaneswar Hub,Debasis Mishra,+91 9256386076,Pokhariput,20.25962,85.82093,22.3,0.169,15:00,18:00,15,1
+KC-0054,Bhubaneswar Hub,Pradeep Mohanty,+91 9275890092,Baramunda,20.29005,85.83304,132.8,0.630,15:00,18:00,20,1
+KC-0055,Bhubaneswar Hub,Rakesh Nayak,+91 9874285591,Jaydev Vihar,20.33320,85.89717,6.4,0.026,09:00,12:00,5,2
+KC-0056,Bhubaneswar Hub,Bikash Rath,+91 9893551778,Khandagiri,20.28360,85.85898,18.7,0.078,15:00,18:00,10,1
+KC-0057,Bhubaneswar Hub,Pati Clinic,+91 9408289135,Pokhariput,20.30501,85.84234,16.4,0.113,09:00,12:00,8,1
+KC-0058,Bhubaneswar Hub,Pati Bakery,+91 9485467639,Rasulgarh,20.30996,85.81176,21.2,0.115,12:00,15:00,5,1
+KC-0059,Bhubaneswar Hub,Rakesh Behera,+91 9981505025,Baramunda,20.29667,85.80488,146.4,1.124,12:00,15:00,20,1
+KC-0060,Bhubaneswar Hub,Sambit Tripathy,+91 9959197729,Unit 4,20.34381,85.85269,2.0,0.011,16:00,17:30,8,2
+KC-0061,Bhubaneswar Hub,Mohanty Kirana Store,+91 9908075560,Unit 4,20.31828,85.82849,10.4,0.073,16:00,17:30,5,1
+KC-0062,Bhubaneswar Hub,Panda Bakery,+91 9529538128,Khandagiri,20.27969,85.85412,4.7,0.019,15:00,18:00,5,2
+KC-0063,Bhubaneswar Hub,Itishree Mohanty,+91 9635748827,Khandagiri,20.24024,85.84872,19.5,0.099,15:00,18:00,10,2
+KC-0064,Bhubaneswar Hub,Aarav Mishra,+91 9746623761,Baramunda,20.29877,85.82795,6.8,0.036,15:00,18:00,5,1
+KC-0065,Bhubaneswar Hub,Smruti Nayak,+91 9106196918,Khandagiri,20.27678,85.81713,12.0,0.053,09:00,12:00,5,1
+KC-0066,Bhubaneswar Hub,Ananya Rath,+91 9858753827,Kalinga Nagar,20.24071,85.81525,22.9,0.175,09:00,12:00,5,1
+KC-0067,Bhubaneswar Hub,Ananya Rath,+91 9798396784,Kalinga Nagar,20.30724,85.82144,24.5,0.117,09:00,18:00,10,1
+KC-0068,Bhubaneswar Hub,Tapan Sahoo,+91 9176569923,Pokhariput,20.29395,85.82127,7.7,0.064,16:00,17:30,10,1
+KC-0069,Bhubaneswar Hub,Lipika Mohanty,+91 9116246488,Jaydev Vihar,20.30833,85.79689,14.0,0.094,09:00,18:00,8,1
+KC-0070,Bhubaneswar Hub,Sambit Sahoo,+91 9793788417,Kalinga Nagar,20.30332,85.84047,6.7,0.035,15:00,18:00,10,1
+KC-0071,Bhubaneswar Hub,Debasis Tripathy,+91 9957810590,Chandrasekharpur,20.29640,85.82437,21.7,0.098,09:00,12:00,8,1
+KC-0072,Bhubaneswar Hub,Pradeep Behera,+91 9482212024,Patia,20.30544,85.80124,3.2,0.015,09:00,12:00,15,1
+KC-0073,Bhubaneswar Hub,Gayatri Sahoo,+91 9901570968,Baramunda,20.29621,85.82801,8.3,0.040,09:00,18:00,15,1
+KC-0074,Bhubaneswar Hub,Gayatri Swain,+91 9639675538,Kalinga Nagar,20.31576,85.86598,12.0,0.090,09:00,12:00,15,1
+KC-0075,Bhubaneswar Hub,Sambit Tripathy,+91 9771465941,Saheed Nagar,20.31937,85.81473,42.2,0.212,15:00,18:00,20,1
+KC-0076,Bhubaneswar Hub,Subhashree Sahoo,+91 9369417042,Rasulgarh,20.29413,85.82864,20.4,0.089,15:00,18:00,5,1
+KC-0077,Bhubaneswar Hub,Nayak Bakery,+91 9843389584,Kalinga Nagar,20.28809,85.81721,1.7,0.012,09:00,18:00,15,1
+KC-0078,Bhubaneswar Hub,Nibedita Behera,+91 9677913622,Jaydev Vihar,20.31349,85.84386,9.0,0.048,12:00,15:00,5,2
+KC-0079,Bhubaneswar Hub,Debasis Panda,+91 9502817904,Kalinga Nagar,20.29853,85.82512,15.9,0.109,09:00,18:00,5,1
+KC-0080,Bhubaneswar Hub,Lipika Tripathy,+91 9674315217,Baramunda,20.34821,85.83735,15.3,0.093,15:00,18:00,5,1
+KC-0081,Bhubaneswar Hub,Sambit Swain,+91 9491063353,Khandagiri,20.24599,85.89734,10.3,0.070,12:00,15:00,8,1
+KC-0082,Bhubaneswar Hub,Sambit Panda,+91 9974083646,Nayapalli,20.29822,85.82193,1.7,0.011,09:00,18:00,5,1
+KC-0083,Bhubaneswar Hub,Chinmayee Nayak,+91 9352335942,Chandrasekharpur,20.29975,85.84320,53.5,0.270,15:00,18:00,20,1
+KC-0084,Bhubaneswar Hub,Das Bakery,+91 9956591971,Baramunda,20.29688,85.81330,16.8,0.093,12:00,15:00,8,1
+KC-0085,Bhubaneswar Hub,Smruti Pati,+91 9197887427,Saheed Nagar,20.26962,85.83499,23.8,0.100,10:00,11:30,10,1
+KC-0086,Bhubaneswar Hub,Mohanty Hardware,+91 9294781924,Jaydev Vihar,20.28014,85.83102,2.5,0.014,09:00,18:00,15,1
+KC-0087,Bhubaneswar Hub,Manas Nayak,+91 9943846625,Patia,20.29635,85.82442,1.3,0.009,09:00,18:00,10,1
+KC-0088,Bhubaneswar Hub,Nayak Clinic,+91 9351187447,Pokhariput,20.27785,85.83677,16.2,0.083,09:00,18:00,10,1
+KC-0089,Bhubaneswar Hub,Swain Boutique,+91 9274999413,Chandrasekharpur,20.29609,85.82567,12.0,0.069,09:00,18:00,5,1
+KC-0090,Bhubaneswar Hub,Pradeep Mishra,+91 9881689346,Kalinga Nagar,20.34009,85.86346,15.6,0.129,09:00,18:00,5,1
+KC-0091,Cuttack Hub,Subhashree Swain,+91 9448362852,Ranihat,20.44140,85.83836,24.4,0.105,09:00,12:00,8,1
+KC-0092,Cuttack Hub,Subhashree Mohanty,+91 9747670170,Buxi Bazaar,20.45887,85.84060,20.0,0.090,12:00,15:00,5,1
+KC-0093,Cuttack Hub,Rath Bakery,+91 9161922318,College Square,20.45959,85.88858,7.3,0.046,10:00,11:30,15,1
+KC-0094,Cuttack Hub,Itishree Tripathy,+91 9762938395,Buxi Bazaar,20.47716,85.86621,15.9,0.088,09:00,12:00,15,1
+KC-0095,Cuttack Hub,Sambit Mohanty,+91 9247024737,Badambadi,20.56174,85.81374,20.1,0.155,12:00,15:00,10,1
+KC-0096,Cuttack Hub,Subhashree Rath,+91 9154829263,Jobra,20.47614,85.77015,71.6,0.298,16:00,17:30,20,1
+KC-0097,Cuttack Hub,Subhashree Tripathy,+91 9782859856,Bidanasi,20.44978,85.82066,2.6,0.011,12:00,15:00,8,1
+KC-0098,Cuttack Hub,Debasis Rath,+91 9445069523,Bidanasi,20.46646,85.86886,11.3,0.073,09:00,18:00,15,1
+KC-0099,Cuttack Hub,Rashmi Swain,+91 9819433567,College Square,20.49803,85.90295,83.0,0.640,09:00,18:00,20,1
+KC-0100,Cuttack Hub,Rath Boutique,+91 9699399729,Tulsipur,20.48784,85.90085,13.9,0.104,12:00,15:00,10,1
+KC-0101,Cuttack Hub,Pati Stationers,+91 9608634437,College Square,20.47109,85.89157,7.0,0.034,09:00,18:00,5,3
+KC-0102,Cuttack Hub,Rath Clinic,+91 9608680894,Buxi Bazaar,20.45510,85.91639,24.6,0.130,10:00,11:30,10,1
+KC-0103,Cuttack Hub,Bikash Panda,+91 9439526720,Mangalabag,20.44349,85.79555,6.0,0.044,10:00,11:30,15,1
+KC-0104,Cuttack Hub,Rath Bakery,+91 9680061680,Buxi Bazaar,20.49747,85.81815,23.2,0.147,12:00,15:00,8,5
+KC-0105,Cuttack Hub,Swain Bakery,+91 9145883523,Tulsipur,20.45173,85.88308,97.3,0.561,09:00,12:00,20,1
+KC-0106,Cuttack Hub,Mishra Bakery,+91 9681570752,Mangalabag,20.45586,85.86656,17.6,0.137,09:00,18:00,15,1
+KC-0107,Cuttack Hub,Ananya Tripathy,+91 9742525760,Buxi Bazaar,20.41398,85.82315,22.3,0.100,09:00,18:00,8,1
+KC-0108,Cuttack Hub,Rath Hardware,+91 9342191173,Chauliaganj,20.47538,85.89596,23.0,0.099,15:00,18:00,5,3
+KC-0109,Cuttack Hub,Rath Clinic,+91 9292588363,Mangalabag,20.47484,85.88056,12.4,0.087,12:00,15:00,15,1
+KC-0110,Cuttack Hub,Rakesh Swain,+91 9715095332,Badambadi,20.46184,85.88274,5.8,0.034,09:00,18:00,5,1
+KC-0111,Cuttack Hub,Gayatri Das,+91 9593898520,Bidanasi,20.46819,85.87497,8.9,0.068,12:00,15:00,5,1
+KC-0112,Cuttack Hub,Nibedita Das,+91 9777314708,Buxi Bazaar,20.40427,85.82296,12.2,0.068,09:00,12:00,5,2
+KC-0113,Cuttack Hub,Chinmayee Tripathy,+91 9400805596,College Square,20.45821,85.88691,13.6,0.077,12:00,15:00,5,3
+KC-0114,Cuttack Hub,Tripathy Clinic,+91 9114522287,Mangalabag,20.47747,85.87763,20.4,0.086,09:00,18:00,5,1
+KC-0115,Cuttack Hub,Sahoo Hardware,+91 9108483632,Bidanasi,20.41331,85.87711,18.2,0.084,10:00,11:30,10,1
+KC-0116,Cuttack Hub,Mohanty Pharmacy,+91 9772479091,Tulsipur,20.46269,85.87669,17.6,0.081,15:00,18:00,5,1
+KC-0117,Cuttack Hub,Rath Bakery,+91 9141651181,Tulsipur,20.46818,85.88791,19.4,0.133,09:00,18:00,10,1
+KC-0118,Cuttack Hub,Smruti Nayak,+91 9183338713,College Square,20.52206,85.87715,12.5,0.059,15:00,18:00,15,1
+KC-0119,Cuttack Hub,Rath Pharmacy,+91 9107484182,Mangalabag,20.45174,85.88215,23.7,0.188,12:00,15:00,5,1
+KC-0120,Cuttack Hub,Swain Bakery,+91 9148196779,College Square,20.46279,85.88319,11.3,0.085,09:00,12:00,5,1
+KC-0121,Cuttack Hub,Mishra Boutique,+91 9748058251,Bidanasi,20.47420,85.90013,15.5,0.069,10:00,11:30,8,1
+KC-0122,Cuttack Hub,Mohanty Electronics,+91 9622565143,College Square,20.46331,85.88178,2.6,0.011,09:00,18:00,5,1
+KC-0123,Cuttack Hub,Aarav Tripathy,+91 9532299798,Badambadi,20.50074,85.83373,15.3,0.114,15:00,18:00,5,1
+KC-0124,Cuttack Hub,Chinmayee Nayak,+91 9635090473,Jobra,20.44046,85.93824,11.2,0.045,09:00,18:00,5,1
+KC-0125,Cuttack Hub,Tripathy Electronics,+91 9503791113,Mangalabag,20.47018,85.90620,14.2,0.107,09:00,18:00,5,1
+KC-0126,Cuttack Hub,Tripathy Electronics,+91 9115927467,CDA Sector 9,20.41920,85.91858,4.6,0.021,09:00,12:00,10,5
+KC-0127,Cuttack Hub,Subhashree Mohanty,+91 9942044320,Ranihat,20.46516,85.88716,18.9,0.137,09:00,18:00,5,2
+KC-0128,Cuttack Hub,Rakesh Panda,+91 9111793461,Mangalabag,20.48081,85.86394,16.5,0.087,09:00,18:00,10,1
+KC-0129,Cuttack Hub,Rashmi Nayak,+91 9883189696,Chauliaganj,20.46487,85.90414,16.0,0.097,09:00,12:00,5,1
+KC-0130,Cuttack Hub,Debasis Das,+91 9839056341,Ranihat,20.46487,85.87584,23.0,0.134,16:00,17:30,5,1
+KC-0131,Cuttack Hub,Sambit Swain,+91 9459049072,Chauliaganj,20.50025,85.89921,2.0,0.014,15:00,18:00,5,1
+KC-0132,Cuttack Hub,Mishra Kirana Store,+91 9156107593,Buxi Bazaar,20.45665,85.88782,8.6,0.053,12:00,15:00,5,1
+KC-0133,Cuttack Hub,Sahoo Bakery,+91 9352817407,Tulsipur,20.52395,85.84611,19.3,0.149,15:00,18:00,15,3
+KC-0134,Cuttack Hub,Das Stationers,+91 9372418031,Chauliaganj,20.44987,85.87390,14.3,0.083,09:00,12:00,10,1
+KC-0135,Cuttack Hub,Das Kirana Store,+91 9392518307,CDA Sector 9,20.46562,85.88974,1.0,0.008,09:00,12:00,5,1
+KC-0136,Cuttack Hub,Itishree Pati,+91 9971128874,Chauliaganj,20.46789,85.88819,13.2,0.090,10:00,11:30,5,1
+KC-0137,Cuttack Hub,Rath Hardware,+91 9319855275,Badambadi,20.47603,85.89879,3.7,0.017,16:00,17:30,5,1
+KC-0138,Cuttack Hub,Pati Clinic,+91 9516029830,CDA Sector 9,20.42400,85.88675,2.1,0.010,09:00,18:00,5,3
+KC-0139,Cuttack Hub,Tapan Sahoo,+91 9373924131,Badambadi,20.45881,85.91595,22.6,0.112,09:00,18:00,5,1
+KC-0140,Cuttack Hub,Ananya Tripathy,+91 9488171245,Tulsipur,20.49564,85.86371,12.2,0.082,15:00,18:00,5,1

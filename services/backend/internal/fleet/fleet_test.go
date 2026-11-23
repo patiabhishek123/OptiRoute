@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/fleet"
+	"github.com/patiabhishek123/OptiRoute/services/backend/internal/geography"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/auth"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/auth/authtest"
 	"github.com/patiabhishek123/OptiRoute/services/backend/internal/platform/testdb"
@@ -43,7 +44,7 @@ func setup(t *testing.T) env {
 		"b":        {UserID: uuid.New(), OrgID: orgB, Role: auth.RoleAdmin},
 	}
 	mux := http.NewServeMux()
-	fleet.NewHandler(pool, slog.New(slog.NewTextHandler(io.Discard, nil))).
+	fleet.NewHandler(pool, geography.NewService(pool), slog.New(slog.NewTextHandler(io.Discard, nil))).
 		Routes(mux, func(h http.Handler) http.Handler { return auth.Authenticate(v, h) })
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)

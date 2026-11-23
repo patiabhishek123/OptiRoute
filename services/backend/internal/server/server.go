@@ -46,7 +46,7 @@ func New(d Deps) (http.Handler, error) {
 		Routes(mux, authn)
 	depots := geography.NewService(d.DB)
 	geography.NewHandler(depots, d.Log).Routes(mux, authn)
-	fleet.NewHandler(d.DB, d.Log).Routes(mux, authn)
+	fleet.NewHandler(d.DB, depots, d.Log).Routes(mux, authn)
 	orders.NewHandler(d.DB, depots, d.Log).Routes(mux, authn)
 	planning.NewHandler(d.DB, d.Log).Routes(mux, authn)
 	dispatch.NewHandler(d.DB, d.Log).Routes(mux, authn)
