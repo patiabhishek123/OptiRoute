@@ -1,0 +1,11 @@
+name,phone,shift_start,shift_end,break_duration_minutes,max_overtime_minutes
+Ramesh Behera,+91 9437000101,08:00,18:00,30,60
+Sunita Das,+91 9437000102,08:00,18:00,30,60
+Prakash Sahoo,+91 9437000103,08:00,18:00,30,60
+Manoj Nayak,+91 9437000104,09:00,19:00,30,60
+Bijay Panda,+91 9437000105,07:00,17:00,45,90
+Arpita Mishra,+91 9437000106,09:00,18:00,30,30
+Deepak Swain,+91 9437000107,09:00,18:00,30,30
+Sanjay Rath,+91 9437000108,08:00,18:00,30,60
+Kalpana Mohanty,+91 9437000109,08:00,18:00,30,60
+Hemant Tripathy,+91 9437000110,07:00,17:00,45,90
