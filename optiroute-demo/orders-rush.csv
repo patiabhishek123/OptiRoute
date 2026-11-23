@@ -1,0 +1,13 @@
+order_id,depot,customer_name,customer_phone,area,lat,lon,weight_kg,volume_m3,window_start,window_end,service_minutes,priority
+KC-R001,Bhubaneswar Hub,Rath Bakery,+91 9318322988,Baramunda,20.25956,85.83625,14.7,0.116,14:00,15:30,8,8
+KC-R002,Bhubaneswar Hub,Sambit Sahoo,+91 9373396308,Old Town,20.28133,85.83775,21.3,0.118,15:00,16:30,5,7
+KC-R003,Bhubaneswar Hub,Pati Hardware,+91 9517669783,Kalinga Nagar,20.29628,85.82955,5.3,0.033,15:00,16:30,10,8
+KC-R004,Bhubaneswar Hub,Sahoo Pharmacy,+91 9636401768,Baramunda,20.28933,85.83602,13.1,0.054,14:00,15:30,5,10
+KC-R005,Bhubaneswar Hub,Rakesh Panda,+91 9540041633,Unit 4,20.29682,85.93578,11.3,0.050,16:00,17:30,5,7
+KC-R006,Bhubaneswar Hub,Mohanty Boutique,+91 9537664719,Kalinga Nagar,20.29160,85.79293,24.9,0.124,15:00,16:30,5,7
+KC-R007,Bhubaneswar Hub,Smruti Swain,+91 9255456771,Unit 4,20.31278,85.84292,21.5,0.093,14:00,15:30,5,5
+KC-R008,Bhubaneswar Hub,Debasis Sahoo,+91 9386076092,Khandagiri,20.27776,85.87171,24.7,0.132,16:00,17:30,5,8
+KC-R009,Cuttack Hub,Nayak Boutique,+91 9571862595,Badambadi,20.46790,85.88049,10.2,0.070,14:00,15:30,15,10
+KC-R010,Cuttack Hub,Nibedita Sahoo,+91 9574671851,Ranihat,20.49300,85.90217,3.2,0.019,16:00,17:30,5,7
+KC-R011,Cuttack Hub,Rath Bakery,+91 9280718871,College Square,20.50110,85.83439,2.5,0.010,16:00,17:30,10,10
+KC-R012,Cuttack Hub,Gayatri Panda,+91 9996864360,College Square,20.45588,85.85840,13.2,0.055,14:00,15:30,5,10

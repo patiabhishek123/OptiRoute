@@ -1,0 +1,8 @@
+order_id,customer_name,lat,lon,weight_kg,window_start,window_end,service_minutes,priority
+KC-X001,Good Row Pharmacy,20.30120,85.83010,5.0,09:00,12:00,5,1
+KC-X002,Missing Latitude,,85.83500,4.0,09:00,12:00,5,1
+KC-X003,Bad Weight,20.29010,85.81920,heavy,09:00,12:00,5,1
+KC-X004,Priority Too High,20.31540,85.84110,3.0,09:00,12:00,5,15
+KC-X005,Window Backwards,20.27880,85.82260,2.5,15:00,11:00,5,1
+KC-X006,Bad Time Format,20.30440,85.80930,6.0,9am,noon,5,1
+KC-X007,Fractional Service,20.32010,85.83330,1.0,09:00,18:00,7.5,1
