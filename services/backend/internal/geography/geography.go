@@ -54,6 +54,7 @@ func (h *Handler) Routes(mux *http.ServeMux, authn func(http.Handler) http.Handl
 		return authn(auth.RequireRole(httpx.Handle(h.log, f), auth.Writers...))
 	}
 	mux.Handle("POST /api/v1/depots", write(h.create))
+	mux.Handle("POST /api/v1/depots/bulk-import", write(h.bulkImport))
 	mux.Handle("GET /api/v1/depots", read(h.list))
 	mux.Handle("GET /api/v1/depots/{id}", read(h.get))
 	mux.Handle("PATCH /api/v1/depots/{id}", write(h.update))
@@ -68,6 +69,14 @@ type depotInput struct {
 
 // validate checks the fields that are present; create additionally requires all of them.
 func (in *depotInput) validate(create bool) error {
+	if problems := in.check(create); len(problems) > 0 {
+		return httpx.Unprocessable("VALIDATION_FAILED", "invalid depot", problems)
+	}
+	return nil
+}
+
+// check returns field -> problem for the fields that are present (all of them when create).
+func (in *depotInput) check(create bool) map[string]string {
 	problems := map[string]string{}
 	if in.Name != nil {
 		*in.Name = strings.TrimSpace(*in.Name)
@@ -84,10 +93,7 @@ func (in *depotInput) validate(create bool) error {
 	if in.Lon != nil && (*in.Lon < -180 || *in.Lon > 180) {
 		problems["lon"] = "between -180 and 180"
 	}
-	if len(problems) > 0 {
-		return httpx.Unprocessable("VALIDATION_FAILED", "invalid depot", problems)
-	}
-	return nil
+	return problems
 }
 
 func (h *Handler) create(w http.ResponseWriter, r *http.Request) error {
